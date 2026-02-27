@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import imageCompression from "browser-image-compression"
 import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 
@@ -53,12 +54,32 @@ export default function BookPage() {
       setUploading(true)
 
       const file = e.target.files[0]
-      const fileExt = file.name.split(".").pop()
-      const filePath = `${bookId}/${Date.now()}.${fileExt}`
+
+      // 🔥 Compression
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.7,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+      })
+
+      const filePath = `${bookId}/${Date.now()}.jpg`
+
+      // Optimistic preview
+      const localPreview = URL.createObjectURL(compressedFile)
+      const tempId = "temp-" + Date.now()
+
+      setCaptures((prev) => [
+        {
+          id: tempId,
+          image_url: localPreview,
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ])
 
       const { error: uploadError } = await supabase.storage
         .from("captures")
-        .upload(filePath, file)
+        .upload(filePath, compressedFile)
 
       if (uploadError) throw uploadError
 
@@ -66,14 +87,21 @@ export default function BookPage() {
         .from("captures")
         .getPublicUrl(filePath)
 
-      await supabase.from("captures").insert([
-        {
-          book_id: bookId,
-          image_url: data.publicUrl,
-        },
-      ])
+      const { data: inserted } = await supabase
+        .from("captures")
+        .insert([
+          {
+            book_id: bookId,
+            image_url: data.publicUrl,
+          },
+        ])
+        .select()
+        .single()
 
-      await fetchData()
+      // Replace temp with real
+      setCaptures((prev) =>
+        prev.map((c) => (c.id === tempId ? inserted : c))
+      )
     } catch (err) {
       console.error(err)
     } finally {
@@ -83,16 +111,14 @@ export default function BookPage() {
 
   function nextImage() {
     if (selectedIndex === null) return
-    if (selectedIndex < captures.length - 1) {
+    if (selectedIndex < captures.length - 1)
       setSelectedIndex(selectedIndex + 1)
-    }
   }
 
   function prevImage() {
     if (selectedIndex === null) return
-    if (selectedIndex > 0) {
+    if (selectedIndex > 0)
       setSelectedIndex(selectedIndex - 1)
-    }
   }
 
   async function deleteCurrent() {
@@ -107,19 +133,15 @@ export default function BookPage() {
 
     const path = capture.image_url.split("/captures/")[1]
     if (path) {
-      await supabase.storage
-        .from("captures")
-        .remove([path])
+      await supabase.storage.from("captures").remove([path])
     }
 
     const newCaptures = captures.filter((_, i) => i !== selectedIndex)
     setCaptures(newCaptures)
 
-    if (newCaptures.length === 0) {
-      setSelectedIndex(null)
-    } else if (selectedIndex >= newCaptures.length) {
+    if (newCaptures.length === 0) setSelectedIndex(null)
+    else if (selectedIndex >= newCaptures.length)
       setSelectedIndex(newCaptures.length - 1)
-    }
   }
 
   return (
@@ -127,8 +149,7 @@ export default function BookPage() {
 
       {/* HEADER */}
       <div className="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur border-b border-neutral-800">
-        <div className="flex items-center gap-3 px-4 py-3">
-
+        <div className="flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
           <button
             onClick={() => router.push("/")}
             className="text-neutral-400 text-2xl active:scale-95 transition"
@@ -137,27 +158,37 @@ export default function BookPage() {
           </button>
 
           <div>
-            <h1 className="text-base font-semibold leading-tight">
+            <h1 className="text-base font-semibold">
               {book?.title}
             </h1>
             <p className="text-xs text-neutral-500">
-              {captures.length} {captures.length > 1 ? "photos" : "photo"}
+              {captures.length} photos
             </p>
           </div>
-
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="px-3 pt-4 pb-32 grid grid-cols-2 gap-3">
+      {/* GRID RESPONSIVE CLEAN */}
+      <div className="
+        px-4 pt-6 pb-32
+        grid
+        grid-cols-2
+        md:grid-cols-3
+        lg:grid-cols-4
+        xl:grid-cols-5
+        gap-4
+        max-w-6xl
+        mx-auto
+      ">
         {captures.map((capture, index) => (
           <div
             key={capture.id}
             onClick={() => setSelectedIndex(index)}
-            className="aspect-[3/4] bg-neutral-900 rounded-2xl overflow-hidden active:scale-95 transition"
+            className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
           >
             <img
               src={capture.image_url}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
           </div>
@@ -170,35 +201,19 @@ export default function BookPage() {
 
           <button
             onClick={() => setSelectedIndex(null)}
-            className="absolute top-6 right-6 text-neutral-400 hover:text-white text-xl"
+            className="absolute top-6 right-6 text-neutral-400 text-xl"
           >
             ✕
           </button>
 
-          <button
-            onClick={prevImage}
-            disabled={selectedIndex === 0}
-            className="absolute left-6 text-3xl text-white opacity-70 hover:opacity-100 disabled:opacity-20"
-          >
-            ‹
-          </button>
-
           <img
             src={captures[selectedIndex].image_url}
-            className="max-h-[90vh] max-w-[95vw] rounded-xl shadow-2xl"
+            className="max-h-[80vh] max-w-[80vw] rounded-xl shadow-2xl"
           />
 
           <button
-            onClick={nextImage}
-            disabled={selectedIndex === captures.length - 1}
-            className="absolute right-6 text-3xl text-white opacity-70 hover:opacity-100 disabled:opacity-20"
-          >
-            ›
-          </button>
-
-          <button
             onClick={deleteCurrent}
-            className="absolute bottom-8 px-6 py-3 bg-red-600 rounded-2xl font-medium hover:bg-red-500 transition"
+            className="absolute bottom-8 px-6 py-3 bg-red-600 rounded-2xl"
           >
             Supprimer
           </button>
@@ -215,7 +230,7 @@ export default function BookPage() {
           onChange={handleUpload}
           className="hidden"
         />
-        <div className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center text-2xl shadow-xl active:scale-95 transition">
+        <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center text-3xl shadow-xl">
           {uploading ? "…" : "+"}
         </div>
       </label>

@@ -16,20 +16,28 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
 
   async function fetchBooks() {
-    setLoading(true)
+    try {
+      setLoading(true)
 
-    const { data } = await supabase
-      .from("books")
-      .select("*")
-      .order("created_at", { ascending: false })
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .order("created_at", { ascending: false })
 
-    setBooks(data || [])
-    setLoading(false)
+      if (error) throw error
+
+      setBooks(data || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -40,30 +48,59 @@ export default function Home() {
     e.preventDefault()
     if (!title.trim()) return
 
-    setCreating(true)
+    try {
+      setCreating(true)
 
-    const { error } = await supabase.from("books").insert([
-      { title, description },
-    ])
+      const { data, error } = await supabase
+        .from("books")
+        .insert([{ title, description }])
+        .select()
+        .single()
 
-    if (!error) {
+      if (error) throw error
+
+      // Optimistic update
+      setBooks((prev) => [data, ...prev])
+
       setTitle("")
       setDescription("")
       setShowForm(false)
-      await fetchBooks()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setCreating(false)
     }
+  }
 
-    setCreating(false)
+  async function handleDeleteBook(id: string) {
+    if (!confirm("Supprimer ce livre ?")) return
+
+    try {
+      setDeletingId(id)
+
+      const { error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", id)
+
+      if (error) throw error
+
+      setBooks((prev) => prev.filter((book) => book.id !== id))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
 
       {/* HEADER */}
-      <header className="max-w-6xl mx-auto px-6 pt-16 pb-10 flex justify-between items-center">
+      <header className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex justify-between items-center">
         <div>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-            Librophoto
+            Librophoto 📖
           </h1>
           <p className="text-neutral-400 mt-2 text-sm md:text-base">
             Capture les passages qui comptent.
@@ -71,16 +108,16 @@ export default function Home() {
         </div>
 
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-5 py-3 bg-white text-black rounded-2xl font-medium hover:scale-[1.03] transition"
+          onClick={() => setShowForm((prev) => !prev)}
+          className="px-6 py-3 bg-white text-black rounded-2xl font-medium hover:scale-[1.03] active:scale-95 transition"
         >
           {showForm ? "Annuler" : "➕ Nouveau"}
         </button>
       </header>
 
-      {/* CREATE FORM (Animated reveal style) */}
+      {/* CREATE FORM */}
       {showForm && (
-        <section className="max-w-4xl mx-auto px-6 pb-12">
+        <section className="max-w-4xl mx-auto px-6 pb-14">
           <form
             onSubmit={handleCreateBook}
             className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 space-y-5"
@@ -104,7 +141,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={creating}
-              className="w-full px-6 py-3 bg-white text-black rounded-xl font-semibold hover:scale-[1.02] transition disabled:opacity-50"
+              className="w-full px-6 py-3 bg-white text-black rounded-xl font-semibold hover:scale-[1.02] active:scale-95 transition disabled:opacity-50"
             >
               {creating ? "Création..." : "Créer le livre"}
             </button>
@@ -146,32 +183,42 @@ export default function Home() {
         ) : (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
             {books.map((book) => (
-              <Link
+              <div
                 key={book.id}
-                href={`/books/${book.id}`}
                 className="group relative bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-neutral-600 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+                {/* Delete */}
+                <button
+                  onClick={() => handleDeleteBook(book.id)}
+                  disabled={deletingId === book.id}
+                  className="absolute top-4 right-4 text-neutral-500 hover:text-red-500 transition"
+                >
+                  {deletingId === book.id ? "…" : "✕"}
+                </button>
 
-                <h3 className="text-lg font-semibold mb-2 relative z-10">
-                  {book.title}
-                </h3>
+                <Link href={`/books/${book.id}`}>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {book.title}
+                    </h3>
 
-                {book.description && (
-                  <p className="text-sm text-neutral-400 mb-6 line-clamp-2 relative z-10">
-                    {book.description}
-                  </p>
-                )}
+                    {book.description && (
+                      <p className="text-sm text-neutral-400 mb-6 line-clamp-2">
+                        {book.description}
+                      </p>
+                    )}
 
-                <div className="flex justify-between items-center text-xs text-neutral-500 relative z-10">
-                  <span>
-                    {new Date(book.created_at).toLocaleDateString()}
-                  </span>
-                  <span className="group-hover:text-white transition">
-                    Ouvrir →
-                  </span>
-                </div>
-              </Link>
+                    <div className="flex justify-between items-center text-xs text-neutral-500">
+                      <span>
+                        {new Date(book.created_at).toLocaleDateString()}
+                      </span>
+                      <span className="group-hover:text-white transition">
+                        Ouvrir →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         )}
