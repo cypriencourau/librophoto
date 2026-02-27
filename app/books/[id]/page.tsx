@@ -196,30 +196,54 @@ export default function BookPage() {
       </div>
 
       {/* MODAL */}
-      {selectedIndex !== null && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
+      {/* MODAL */}
+{selectedIndex !== null && (
+  <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
 
-          <button
-            onClick={() => setSelectedIndex(null)}
-            className="absolute top-6 right-6 text-neutral-400 text-xl"
-          >
-            ✕
-          </button>
+    {/* CLOSE */}
+    <button
+      onClick={() => setSelectedIndex(null)}
+      className="absolute top-6 right-6 text-neutral-400 hover:text-white text-xl"
+    >
+      ✕
+    </button>
 
-          <img
-            src={captures[selectedIndex].image_url}
-            className="max-h-[80vh] max-w-[80vw] rounded-xl shadow-2xl"
-          />
+    {/* PREVIOUS */}
+    {selectedIndex > 0 && (
+      <button
+        onClick={prevImage}
+        className="absolute left-6 text-4xl text-white opacity-70 hover:opacity-100 transition"
+      >
+        ‹
+      </button>
+    )}
 
-          <button
-            onClick={deleteCurrent}
-            className="absolute bottom-8 px-6 py-3 bg-red-600 rounded-2xl"
-          >
-            Supprimer
-          </button>
+    {/* IMAGE */}
+    <img
+      src={captures[selectedIndex].image_url}
+      className="max-h-[80vh] max-w-[80vw] rounded-xl shadow-2xl"
+    />
 
-        </div>
-      )}
+    {/* NEXT */}
+    {selectedIndex < captures.length - 1 && (
+      <button
+        onClick={nextImage}
+        className="absolute right-6 text-4xl text-white opacity-70 hover:opacity-100 transition"
+      >
+        ›
+      </button>
+    )}
+
+    {/* DELETE */}
+    <button
+      onClick={deleteCurrent}
+      className="absolute bottom-8 px-6 py-3 bg-red-600 rounded-2xl font-medium hover:bg-red-500 transition"
+    >
+      Supprimer
+    </button>
+
+  </div>
+)}
 
       {/* FLOATING BUTTON */}
       <label className="fixed bottom-6 right-6 z-50 pb-[env(safe-area-inset-bottom)]">

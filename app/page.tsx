@@ -100,10 +100,10 @@ export default function Home() {
       <header className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex justify-between items-center">
         <div>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-            Librophoto 📖
+            Librophoto
           </h1>
           <p className="text-neutral-400 mt-2 text-sm md:text-base">
-            Capture les passages qui comptent.
+            Capture les passages qui comptent. 📖📸
           </p>
         </div>
 
