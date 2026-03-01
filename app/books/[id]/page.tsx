@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import imageCompression from "browser-image-compression"
+import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 
@@ -19,148 +18,124 @@ type Book = {
 export default function BookPage() {
   const params = useParams()
   const router = useRouter()
-  const bookId = params?.id as string
+  const bookId = params?.id as string | undefined
 
   const [book, setBook] = useState<Book | null>(null)
   const [captures, setCaptures] = useState<Capture[]>([])
-  const [uploading, setUploading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
-  async function fetchData() {
-    const { data: bookData } = await supabase
-      .from("books")
-      .select("id, title")
-      .eq("id", bookId)
-      .single()
+  const [extracting, setExtracting] = useState(false)
+  const [fullText, setFullText] = useState("")
 
-    const { data: captureData } = await supabase
-      .from("captures")
-      .select("*")
-      .eq("book_id", bookId)
-      .order("created_at", { ascending: false })
+  const touchStartX = useRef<number | null>(null)
 
-    if (bookData) setBook(bookData)
-    setCaptures(captureData || [])
+  // ================= FETCH =================
+
+  useEffect(() => {
+    if (!bookId) return
+
+    async function fetchData() {
+      const { data: bookData } = await supabase
+        .from("books")
+        .select("id, title")
+        .eq("id", bookId)
+        .single()
+
+      const { data: captureData } = await supabase
+        .from("captures")
+        .select("*")
+        .eq("book_id", bookId)
+        .order("created_at", { ascending: false })
+
+      if (bookData) setBook(bookData)
+      setCaptures(captureData ?? [])
+    }
+
+    fetchData()
+  }, [bookId])
+
+  // ================= OCR =================
+
+  async function runOCR(imageUrl: string) {
+    try {
+      setExtracting(true)
+      setFullText("")
+
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      })
+
+      const result = await response.json()
+
+      let text = result.text || ""
+
+      // Nettoyage léger
+      text = text
+        .replace(/-\n/g, "")        // mots coupés en fin de ligne
+        .replace(/\n{3,}/g, "\n\n") // trop de sauts
+        .trim()
+
+      setFullText(text)
+
+    } catch (error) {
+      console.error("Erreur OCR :", error)
+    } finally {
+      setExtracting(false)
+    }
   }
 
   useEffect(() => {
-    if (bookId) fetchData()
-  }, [bookId])
-
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files?.length) return
-
-    try {
-      setUploading(true)
-
-      const file = e.target.files[0]
-
-      // 🔥 Compression
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.7,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-      })
-
-      const filePath = `${bookId}/${Date.now()}.jpg`
-
-      // Optimistic preview
-      const localPreview = URL.createObjectURL(compressedFile)
-      const tempId = "temp-" + Date.now()
-
-      setCaptures((prev) => [
-        {
-          id: tempId,
-          image_url: localPreview,
-          created_at: new Date().toISOString(),
-        },
-        ...prev,
-      ])
-
-      const { error: uploadError } = await supabase.storage
-        .from("captures")
-        .upload(filePath, compressedFile)
-
-      if (uploadError) throw uploadError
-
-      const { data } = supabase.storage
-        .from("captures")
-        .getPublicUrl(filePath)
-
-      const { data: inserted } = await supabase
-        .from("captures")
-        .insert([
-          {
-            book_id: bookId,
-            image_url: data.publicUrl,
-          },
-        ])
-        .select()
-        .single()
-
-      // Replace temp with real
-      setCaptures((prev) =>
-        prev.map((c) => (c.id === tempId ? inserted : c))
-      )
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setUploading(false)
+    if (selectedIndex !== null && captures[selectedIndex]) {
+      runOCR(captures[selectedIndex].image_url)
     }
+  }, [selectedIndex, captures])
+
+  // ================= NAVIGATION =================
+
+  function closeModal() {
+    setSelectedIndex(null)
+    setFullText("")
   }
 
   function nextImage() {
-    if (selectedIndex === null) return
-    if (selectedIndex < captures.length - 1)
+    if (selectedIndex !== null && selectedIndex < captures.length - 1) {
       setSelectedIndex(selectedIndex + 1)
+    }
   }
 
   function prevImage() {
-    if (selectedIndex === null) return
-    if (selectedIndex > 0)
+    if (selectedIndex !== null && selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1)
-  }
-
-  async function deleteCurrent() {
-    if (selectedIndex === null) return
-
-    const capture = captures[selectedIndex]
-
-    await supabase
-      .from("captures")
-      .delete()
-      .eq("id", capture.id)
-
-    const path = capture.image_url.split("/captures/")[1]
-    if (path) {
-      await supabase.storage.from("captures").remove([path])
     }
-
-    const newCaptures = captures.filter((_, i) => i !== selectedIndex)
-    setCaptures(newCaptures)
-
-    if (newCaptures.length === 0) setSelectedIndex(null)
-    else if (selectedIndex >= newCaptures.length)
-      setSelectedIndex(newCaptures.length - 1)
   }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const delta = e.changedTouches[0].clientX - touchStartX.current
+    if (delta > 50) prevImage()
+    if (delta < -50) nextImage()
+    touchStartX.current = null
+  }
+
+  // ================= RENDER =================
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
 
       {/* HEADER */}
-      <div className="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur border-b border-neutral-800">
+      <div className="sticky top-0 bg-neutral-950 border-b border-neutral-800">
         <div className="flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
-          <button
-            onClick={() => router.push("/")}
-            className="text-neutral-400 text-2xl active:scale-95 transition"
-          >
+          <button onClick={() => router.push("/")} className="text-2xl">
             ←
           </button>
-
           <div>
-            <h1 className="text-base font-semibold">
-              {book?.title}
-            </h1>
+            <h1 className="text-base font-semibold">{book?.title}</h1>
             <p className="text-xs text-neutral-500">
               {captures.length} photos
             </p>
@@ -168,18 +143,8 @@ export default function BookPage() {
         </div>
       </div>
 
-      {/* GRID RESPONSIVE CLEAN */}
-      <div className="
-        px-4 pt-6 pb-32
-        grid
-        grid-cols-2
-        md:grid-cols-3
-        lg:grid-cols-4
-        xl:grid-cols-5
-        gap-4
-        max-w-6xl
-        mx-auto
-      ">
+      {/* GRID */}
+      <div className="px-4 pt-6 pb-32 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
         {captures.map((capture, index) => (
           <div
             key={capture.id}
@@ -188,76 +153,86 @@ export default function BookPage() {
           >
             <img
               src={capture.image_url}
-              loading="lazy"
               className="w-full h-full object-cover"
+              alt=""
             />
           </div>
         ))}
       </div>
 
       {/* MODAL */}
-      {/* MODAL */}
-{selectedIndex !== null && (
-  <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
+      {selectedIndex !== null && captures[selectedIndex] && (
+        <div
+          className="fixed inset-0 bg-black/95 flex items-center justify-center z-50"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <button
+            onClick={closeModal}
+            className="absolute top-6 right-6 text-xl"
+          >
+            ✕
+          </button>
 
-    {/* CLOSE */}
-    <button
-      onClick={() => setSelectedIndex(null)}
-      className="absolute top-6 right-6 text-neutral-400 hover:text-white text-xl"
-    >
-      ✕
-    </button>
+          {selectedIndex > 0 && (
+            <button
+              onClick={prevImage}
+              className="absolute left-6 text-4xl"
+            >
+              ‹
+            </button>
+          )}
 
-    {/* PREVIOUS */}
-    {selectedIndex > 0 && (
-      <button
-        onClick={prevImage}
-        className="absolute left-6 text-4xl text-white opacity-70 hover:opacity-100 transition"
-      >
-        ‹
-      </button>
-    )}
+          <div className="flex gap-10 items-start max-w-6xl w-full px-10">
 
-    {/* IMAGE */}
-    <img
-      src={captures[selectedIndex].image_url}
-      className="max-h-[80vh] max-w-[80vw] rounded-xl shadow-2xl"
-    />
+            {/* IMAGE */}
+            <div>
+              <img
+                src={captures[selectedIndex].image_url}
+                className="max-h-[80vh] max-w-[40vw] rounded-xl shadow-2xl"
+                alt=""
+              />
+            </div>
 
-    {/* NEXT */}
-    {selectedIndex < captures.length - 1 && (
-      <button
-        onClick={nextImage}
-        className="absolute right-6 text-4xl text-white opacity-70 hover:opacity-100 transition"
-      >
-        ›
-      </button>
-    )}
+            {/* TEXTE */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-[40vw] max-h-[80vh] overflow-y-auto">
+              <h3 className="text-sm text-neutral-400 mb-4">
+                Texte extrait
+              </h3>
 
-    {/* DELETE */}
-    <button
-      onClick={deleteCurrent}
-      className="absolute bottom-8 px-6 py-3 bg-red-600 rounded-2xl font-medium hover:bg-red-500 transition"
-    >
-      Supprimer
-    </button>
+              <textarea
+                value={fullText}
+                onChange={(e) => setFullText(e.target.value)}
+                className="w-full h-[60vh] bg-neutral-800 text-sm leading-relaxed p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap"
+              />
 
-  </div>
-)}
+              <button
+                onClick={() => navigator.clipboard.writeText(fullText)}
+                className="mt-6 px-4 py-2 bg-white text-black rounded-lg text-sm"
+              >
+                Copier le texte
+              </button>
+            </div>
 
-      {/* FLOATING BUTTON */}
-      <label className="fixed bottom-6 right-6 z-50 pb-[env(safe-area-inset-bottom)]">
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleUpload}
-          className="hidden"
-        />
-        <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center text-3xl shadow-xl">
-          {uploading ? "…" : "+"}
+          </div>
+
+          {selectedIndex < captures.length - 1 && (
+            <button
+              onClick={nextImage}
+              className="absolute right-6 text-4xl"
+            >
+              ›
+            </button>
+          )}
+
+          {extracting && (
+            <div className="absolute bottom-10 text-sm text-neutral-400">
+              Analyse du texte...
+            </div>
+          )}
+
         </div>
-      </label>
+      )}
 
     </main>
   )

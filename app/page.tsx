@@ -12,6 +12,7 @@ type Book = {
 }
 
 export default function Home() {
+  const [monthlyOCR, setMonthlyOCR] = useState(0)
   const [books, setBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -43,6 +44,20 @@ export default function Home() {
   useEffect(() => {
     fetchBooks()
   }, [])
+
+  useEffect(() => {
+  async function fetchOCRStats() {
+    try {
+      const res = await fetch("/api/ocr/stats")
+      const data = await res.json()
+      setMonthlyOCR(data.count || 0)
+    } catch (err) {
+      console.error("Erreur OCR stats", err)
+    }
+  }
+
+  fetchOCRStats()
+}, [])
 
   async function handleCreateBook(e: React.FormEvent) {
     e.preventDefault()
@@ -97,23 +112,51 @@ export default function Home() {
     <main className="min-h-screen bg-neutral-950 text-white">
 
       {/* HEADER */}
-      <header className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-            Librophoto
-          </h1>
-          <p className="text-neutral-400 mt-2 text-sm md:text-base">
-            Capture les passages qui comptent. 📖📸
-          </p>
-        </div>
+<header className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex justify-between items-start">
 
-        <button
-          onClick={() => setShowForm((prev) => !prev)}
-          className="px-6 py-3 bg-white text-black rounded-2xl font-medium hover:scale-[1.03] active:scale-95 transition"
-        >
-          {showForm ? "Annuler" : "➕ Nouveau"}
-        </button>
-      </header>
+  <div>
+    <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
+      Librophoto
+    </h1>
+    <p className="text-neutral-400 mt-2 text-sm md:text-base">
+      Capture les passages qui comptent. 📖📸
+    </p>
+  </div>
+
+  <div className="flex flex-col items-end gap-3">
+
+    <button
+      onClick={() => setShowForm((prev) => !prev)}
+      className="px-6 py-3 bg-white text-black rounded-2xl font-medium hover:scale-[1.03] active:scale-95 transition"
+    >
+      {showForm ? "Annuler" : "➕ Nouveau"}
+    </button>
+
+    {/* Compteur OCR */}
+    <div className="w-52">
+      <div className="flex justify-between text-xs text-neutral-400 mb-1">
+        <span>{monthlyOCR} / 1000 OCR</span>
+        <span>{Math.min(Math.round((monthlyOCR / 1000) * 100), 100)}%</span>
+      </div>
+
+      <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-500 ${
+            monthlyOCR > 800
+              ? "bg-orange-400"
+              : monthlyOCR > 950
+              ? "bg-red-500"
+              : "bg-white"
+          }`}
+          style={{
+            width: `${Math.min((monthlyOCR / 1000) * 100, 100)}%`,
+          }}
+        />
+      </div>
+    </div>
+
+  </div>
+</header>
 
       {/* CREATE FORM */}
       {showForm && (
