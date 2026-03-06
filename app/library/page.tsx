@@ -373,7 +373,7 @@ Aucune citation
 <Link
 href={`/library/${p.id}`}
 key={p.id}
-className="group flex flex-col justify-between min-h-[170px] bg-neutral-900 border border-neutral-800 rounded-2xl p-5 hover:border-neutral-600 transition"
+className="group flex flex-col justify-between min-h-170px bg-neutral-900 border border-neutral-800 rounded-2xl p-5 hover:border-neutral-600 transition"
 >
 
 {/* citation */}
@@ -408,7 +408,7 @@ e.preventDefault()
 e.stopPropagation()
 setActiveTheme(p.theme!)
 }}
-className="px-2 py-[3px] rounded-md bg-neutral-800 text-neutral-300 uppercase tracking-wide text-[10px]"
+className="px-2 py-3px rounded-md bg-neutral-800 text-neutral-300 uppercase tracking-wide text-[10px]"
 >
 {p.theme}
 </button>

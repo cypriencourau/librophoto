@@ -237,7 +237,7 @@ className="absolute top-2 right-2 z-20 p-1 text-neutral-400 hover:text-red-500"
 
 <Link href={`/books/${book.id}`}>
 
-<div className="relative aspect-[3/4] w-full overflow-hidden">
+<div className="relative aspect-3/4 w-full overflow-hidden">
 
 {book.cover ? (
 
@@ -256,7 +256,7 @@ No cover
 
 {/* gradient */}
 
-<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+<div className="absolute inset-0 bg-gradient-to-top from-black/80 via-black/30 to-transparent" />
 
 {/* title overlay */}
 
