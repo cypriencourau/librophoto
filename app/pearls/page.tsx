@@ -1,9 +1,12 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Plus, Search, X } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+
 
 type Pearl = {
   id: string
