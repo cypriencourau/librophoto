@@ -268,19 +268,39 @@ activeTheme === t
 >
 
 <button
+
+onTouchStart={(e)=>{
+
+const timeout = setTimeout(()=>{
+
+if(confirm(`Supprimer le thème "${t}" ?`)){
+setThemes(prev => prev.filter(x => x !== t))
+}
+
+},700)
+
+e.currentTarget.dataset.timeout = String(timeout)
+
+}}
+
+onTouchEnd={(e)=>{
+clearTimeout(Number(e.currentTarget.dataset.timeout))
+}}
+
 onClick={()=>setActiveTheme(t)}
+
+onContextMenu={(e)=>{
+e.preventDefault()
+
+if(confirm(`Supprimer le thème "${t}" ?`)){
+setThemes(prev => prev.filter(x => x !== t))
+}
+
+}}
+
 >
 {t}
-</button>
 
-<button
-onClick={(e)=>{
-e.stopPropagation()
-setThemes(prev => prev.filter(x => x !== t))
-}}
-className="opacity-60 hover:opacity-100"
->
-×
 </button>
 
 </div>
@@ -299,7 +319,7 @@ setThemes(prev => [...prev,name])
 }}
 className="text-[13px] px-3 py-1.5 rounded-full border border-neutral-700 hover:border-neutral-500"
 >
-+ thème
++
 </button>
 
 </div>
@@ -425,22 +445,7 @@ className="text-[11px] text-neutral-500 hover:text-white"
 )}
 
 
-{/* delete */}
 
-<div className="flex justify-end pt-2">
-
-<button
-onClick={(e)=>{
-e.preventDefault()
-e.stopPropagation()
-deletePearl(p.id)
-}}
-className="text-[11px] text-red-400 hover:text-red-500"
->
-Supprimer
-</button>
-
-</div>
 
 </div>
 
