@@ -344,7 +344,7 @@ setFullText(reconstructed.trim())
     onTouchEnd={handleTouchEnd}
   >
 
-    <div className="absolute top-4 right-4 md:right-6 z-[60] flex gap-2">
+    <div className="absolute top-4 right-4 md:right-6 z-60 flex gap-2">
 
       <button
         onClick={(e) => {
@@ -527,7 +527,7 @@ setFullText(reconstructed.trim())
     />
 
     {selectedIndex === null && (
-    <div className="md:hidden fixed bottom-24 right-6 z-[60] flex flex-col items-end gap-3">
+    <div className="md:hidden fixed bottom-24 right-6 z-60 flex flex-col items-end gap-3">
 
       {menuOpen && (
         <>
