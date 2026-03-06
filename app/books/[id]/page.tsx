@@ -294,7 +294,7 @@ setFullText(reconstructed.trim())
       {/* HEADER */}
       <div className="sticky top-0 z-40 bg-neutral-950/70 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
-          <button onClick={() => router.push("/")} className="text-2xl">
+          <button onClick={() => router.back()} className="text-2xl">
             ←
           </button>
           <div>
