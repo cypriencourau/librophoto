@@ -38,6 +38,11 @@ export default function BookPage() {
   const [book, setBook] = useState<Book | null>(null)
   const [captures, setCaptures] = useState<Capture[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [pearls,setPearls] = useState<any[]>([])
+  const [pageNumber,setPageNumber] = useState("")
+  const [tagsInput,setTagsInput] = useState("")
+  const [tab,setTab] = useState("pearls")
+  const [search,setSearch] = useState("")
 
   const [ocrWords, setOcrWords] = useState<OCRWord[]>([])
   const [extracting, setExtracting] = useState(false)
@@ -53,6 +58,25 @@ export default function BookPage() {
 
   const fileInputCamera = useRef<HTMLInputElement | null>(null)
   const fileInputGallery = useRef<HTMLInputElement | null>(null)
+
+  async function fetchPearls(){
+
+  if(!bookId) return
+
+  const {data,error} = await supabase
+    .from("pearls")
+    .select("id,content,page")
+    .eq("book_id",bookId)
+    .order("page",{ascending:true, nullsFirst:true})
+
+  if(error){
+    console.error(error)
+    return
+  }
+
+  setPearls(data || [])
+
+}
 
   // ================= FETCH =================
 
@@ -75,6 +99,8 @@ export default function BookPage() {
         if (bookData) setBook(bookData)
         setCaptures(captureData ?? [])
         setMenuOpen(false)
+
+        fetchPearls()
     }
 
     fetchData()
@@ -164,7 +190,36 @@ setFullText(reconstructed.trim())
     }
   }
 
+  
+  // ================= GARDER UNE PERLE OCR =================
 
+      async function createPearlFromOCR(){
+
+        if(!bookId || !fullText) return
+
+        const {error} = await supabase
+          .from("pearls")
+          .insert({
+            content: fullText,
+            book_id: bookId,
+            source: book?.title,
+            page: pageNumber ? Number(pageNumber) : null,
+            tags: tagsInput
+          })
+
+        if(error){
+          console.error(error)
+          alert("Erreur création perle")
+          return
+        }
+
+        setFullText("")
+        setPageNumber("")
+        setTagsInput("")
+
+        fetchPearls()
+
+      }
 
   // ================= UPLOAD PHOTO =================
 
@@ -292,22 +347,149 @@ setFullText(reconstructed.trim())
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
       {/* HEADER */}
-      <div className="sticky top-0 z-40 bg-neutral-950/70 backdrop-blur-xl border-b border-white/10">
-        <div className="flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
-          <button onClick={() => router.back()} className="text-2xl">
+      <div className="flex items-center justify-between px-4 py-3 max-w-6xl mx-auto">
+
+        <div className="flex items-center gap-3">
+
+          <button
+            onClick={() => router.back()}
+            className="text-2xl"
+          >
             ←
           </button>
+
           <div>
-            <h1 className="text-base font-semibold">{book?.title}</h1>
+            <h1 className="text-base sm:text-lg font-semibold">
+              {book?.title}
+            </h1>
+
             <p className="text-xs text-neutral-500">
-              {captures.length} photos
+              {pearls.length} passages • {captures.length} photos
             </p>
           </div>
+
         </div>
+
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-neutral-800 hover:bg-neutral-700"
+        >
+          📷
+        </button>
+
       </div>
 
+
+
+      {menuOpen && (
+
+          <div className="px-4 pb-4 max-w-6xl mx-auto flex gap-2">
+
+          <button
+          onClick={()=>{
+          setMenuOpen(false)
+          fileInputCamera.current?.click()
+          }}
+          className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm"
+          >
+          📷 Camera
+          </button>
+
+          <button
+          onClick={()=>{
+          setMenuOpen(false)
+          fileInputGallery.current?.click()
+          }}
+          className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm"
+          >
+          🖼 Galerie
+          </button>
+
+          </div>
+
+          )}
+
+      {/* TABS */}
+
+      <div className="flex gap-2 px-4 pt-4 max-w-6xl mx-auto">
+
+      <button
+      onClick={()=>setTab("pearls")}
+      className={`px-3 py-1.5 text-sm rounded-lg ${
+      tab==="pearls"
+      ? "bg-white text-black"
+      : "bg-neutral-800 text-neutral-300"
+      }`}
+      >
+      Perles
+      </button>
+
+      <button
+      onClick={()=>setTab("photos")}
+      className={`px-3 py-1.5 text-sm rounded-lg ${
+      tab==="photos"
+      ? "bg-white text-black"
+      : "bg-neutral-800 text-neutral-300"
+      }`}
+      >
+      Photos
+      </button>
+
+      </div>
+
+      {/* PASSAGES DU LIVRE */}
+
+      {tab === "pearls" && pearls.length > 0 && (
+
+      <div className="px-4 pt-6 max-w-3xl mx-auto">
+
+      <h2 className="text-lg font-semibold mb-4">
+      Passages sauvegardés
+      </h2>
+
+      <input
+        value={search}
+        onChange={(e)=>setSearch(e.target.value)}
+        placeholder="Rechercher dans ce livre..."
+        className="w-full mb-6 px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-sm focus:outline-none focus:border-neutral-600"
+        />
+
+      <div className="space-y-4">
+
+      {pearls
+        .filter(p => 
+          p.content.toLowerCase().includes(search.toLowerCase())
+        )
+        .map(p => (
+
+      <div
+      key={p.id}
+      className="bg-neutral-900 border border-neutral-800 rounded-xl p-4"
+      >
+
+      {p.page && (
+      <div className="text-xs text-neutral-500 mb-2">
+      page {p.page}
+      </div>
+      )}
+
+      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+      {p.content}
+      </p>
+
+      </div>
+
+      ))}
+
+      </div>
+
+      </div>
+
+      )}
+
       {/* GRID */}
-      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+      {tab === "photos" && (
+        <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
 
       {uploadingPreview && (
         <div className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse">
@@ -333,6 +515,7 @@ setFullText(reconstructed.trim())
           </div>
         ))}
       </div>
+      )}
 
       {/* MODAL */}
         
@@ -443,14 +626,15 @@ setFullText(reconstructed.trim())
       </div>
 
       {/* TEXTE */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 w-full md:w-[95vw] max-h-[45vh] md:max-h-[80vh] overflow-y-auto mt-4">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 w-full w-full md:w-[420px] max-h-[45vh] md:max-h-[80vh] overflow-y-auto mt-4">
 
         <h3 className="text-sm text-neutral-400 mb-4">
           Texte extrait
         </h3>
 
+        <div className="space-y-4">
         {fullText === "" && !extracting && (
-          <div className="mt-4">
+          <div className="mt-6">
             <button
               onClick={() =>
                 runOCR(captures[selectedIndex].image_url)
@@ -468,6 +652,25 @@ setFullText(reconstructed.trim())
           </div>
         )}
 
+          <div className="flex flex-col sm:flex-row gap-3">
+
+          <input
+          value={pageNumber}
+          onChange={(e)=>setPageNumber(e.target.value)}
+          placeholder="page"
+          className="w-24 px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded-lg text-sm focus:outline-none focus:border-neutral-500"
+          />
+
+          <input
+          value={tagsInput}
+          onChange={(e)=>setTagsInput(e.target.value)}
+          placeholder="tags : foi silence prière"
+          className="flex-1 px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded-lg text-sm focus:outline-none focus:border-neutral-500"
+          />
+
+          </div>
+        </div>
+
         {fullText !== "" && (
           <>
             <textarea
@@ -475,13 +678,16 @@ setFullText(reconstructed.trim())
               onChange={(e) => setFullText(e.target.value)}
               className="w-full h-[30vh] md:h-[60vh] bg-neutral-800 text-sm leading-relaxed p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap"
             />
+            <div className="flex flex-col sm:flex-row gap-3">
 
             <button
-              onClick={() => navigator.clipboard.writeText(fullText)}
-              className="mt-6 px-4 py-2 bg-white text-black rounded-lg text-sm"
+            onClick={createPearlFromOCR}
+            className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium"
             >
-              Copier le texte
+            Créer une perle
             </button>
+
+            </div>
           </>
         )}
 
@@ -525,43 +731,6 @@ setFullText(reconstructed.trim())
       style={{ display: "none" }}
       onChange={handleUpload}
     />
-
-    {selectedIndex === null && (
-    <div className="md:hidden fixed bottom-24 right-6 z-60 flex flex-col items-end gap-3">
-
-      {menuOpen && (
-        <>
-          <button
-            onClick={() => {
-            setMenuOpen(false)
-            fileInputCamera.current?.click()
-          }}
-            className="bg-neutral-900 border border-neutral-700 px-4 py-2 rounded-xl text-sm shadow-lg"
-          >
-            📷 Camera
-          </button>
-
-          <button
-            onClick={() => {
-            setMenuOpen(false)
-            fileInputGallery.current?.click()
-          }}
-            className="bg-neutral-900 border border-neutral-700 px-4 py-2 rounded-xl text-sm shadow-lg"
-          >
-            🖼 Galerie
-          </button>
-        </>
-      )}
-
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="w-16 h-16 rounded-full bg-white text-black text-4xl flex items-center justify-center shadow-xl"
-      >
-        +
-      </button>
-
-    </div>
-    )}
 
     </main>
   )
