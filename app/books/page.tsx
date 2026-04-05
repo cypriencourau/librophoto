@@ -51,7 +51,7 @@ export default function BooksPage() {
 
       const booksWithCover = (data || []).map((book:any)=>({
         ...book,
-        cover: book.captures?.[0]?.image_url || null
+        cover: book.cover || book.captures?.[0]?.image_url || null
       }))
 
       setBooks(booksWithCover)

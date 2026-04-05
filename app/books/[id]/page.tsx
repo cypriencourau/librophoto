@@ -54,7 +54,7 @@ export default function BookPage() {
   const touchStartX = useRef<number | null>(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const [uploadingPreview, setUploadingPreview] = useState<string | null>(null)
+  const [uploadingPreview, setUploadingPreview] = useState<string[]>([])
 
   const fileInputCamera = useRef<HTMLInputElement | null>(null)
   const fileInputGallery = useRef<HTMLInputElement | null>(null)
@@ -224,50 +224,67 @@ setFullText(reconstructed.trim())
   // ================= UPLOAD PHOTO =================
 
     async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-      const file = e.target.files?.[0]
-      if (!file || !bookId) return
+  const files = e.target.files
+  if (!files || !bookId) return
 
-      // preview instantané
-      const previewUrl = URL.createObjectURL(file)
-      setUploadingPreview(previewUrl)
-      setMenuOpen(false)
+  const fileArray = Array.from(files)
 
-      const safeName = file.name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9.-]/g, "")
+  setMenuOpen(false)
 
-    const fileName = `${bookId}/${Date.now()}-${safeName}`
+  try {
+    // previews multiples
+    const previews = fileArray.map(file => URL.createObjectURL(file))
+    setUploadingPreview(previews)
 
-      const { error } = await supabase.storage
-        .from("captures")
-        .upload(fileName, file)
+    await Promise.all(
+      fileArray.map(async (file) => {
+        const safeName = file.name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9.-]/g, "")
 
-      if (error) {
-        console.error(error)
-        return
-      }
+        const fileName = `${bookId}/${Date.now()}-${safeName}`
 
-      const { data } = supabase.storage
-        .from("captures")
-        .getPublicUrl(fileName)
+        const { error: uploadError } = await supabase.storage
+          .from("captures")
+          .upload(fileName, file)
 
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          return
+        }
 
-      const { data: newCapture } = await supabase
-        .from("captures")
-        .insert({
-          book_id: bookId,
-          image_url: data.publicUrl
-        })
-        .select()
-        .single()
+        const { data } = supabase.storage
+          .from("captures")
+          .getPublicUrl(fileName)
 
-      if (newCapture) {
-        setCaptures(prev => [newCapture, ...prev])
-      }
-      setUploadingPreview(null)
+        const { data: newCapture, error: insertError } = await supabase
+          .from("captures")
+          .insert({
+            book_id: bookId,
+            image_url: data.publicUrl
+          })
+          .select()
+          .single()
 
-      }
+        if (insertError) {
+          console.error("Insert error:", insertError)
+          return
+        }
+
+        if (newCapture) {
+          setCaptures(prev => [newCapture, ...prev])
+        }
+      })
+    )
+
+  } catch (err) {
+    console.error("Global upload error:", err)
+  } finally {
+    setUploadingPreview([])
+    e.target.value = ""
+  }
+}
 
     // ======== SUPPR PHOTO==========
     async function deleteCapture(capture: Capture) {
@@ -473,7 +490,7 @@ setFullText(reconstructed.trim())
       </div>
       )}
 
-      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+      <p className="text-[15px] leading-7 whitespace-pre-wrap">
       {p.content}
       </p>
 
@@ -489,31 +506,37 @@ setFullText(reconstructed.trim())
 
       {/* GRID */}
       {tab === "photos" && (
-        <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
 
-      {uploadingPreview && (
-        <div className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse">
+      {uploadingPreview.map((url, i) => (
+        <div
+          key={i}
+          className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
+        >
           <img
-            src={uploadingPreview}
+            src={url}
             className="w-full h-full object-cover opacity-70"
             alt=""
           />
         </div>
-      )}
+      ))}
       
-        {captures.map((capture, index) => (
-          <div
-            key={capture.id}
+      {captures.map((capture, index) => (
+        <div
+          key={capture.id}
+          className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
+        >
+
+          {/* IMAGE */}
+          <img
+            src={capture.image_url}
             onClick={() => setSelectedIndex(index)}
-            className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
-          >
-            <img
-              src={capture.image_url}
-              className="w-full h-full object-cover"
-              alt=""
-            />
-          </div>
-        ))}
+            className="w-full h-full object-cover cursor-pointer"
+            alt=""
+          />
+
+        </div>
+      ))}
       </div>
       )}
 
@@ -567,8 +590,7 @@ setFullText(reconstructed.trim())
     {/* CONTENU */}
     <div
       onClick={(e) => e.stopPropagation()}
-      className="flex flex-col md:flex-row gap-6 md:gap-10 items-start w-full max-w-6xl px-4 md:px-10"
-    >
+      className="flex flex-col md:flex-row gap-6 items-center md:items-start w-full max-w-6xl px-4 md:px-10" >
 
       {/* IMAGE */}
       <div className="relative w-full">
@@ -576,7 +598,7 @@ setFullText(reconstructed.trim())
           ref={imageRef}
           src={captures[selectedIndex].image_url}
           onLoad={() => setImageLoaded(true)}
-          className="w-full md:max-w-[35vw] max-h-[50vh] md:max-h-[80vh] object-contain rounded-xl shadow-2xl"
+          className="w-full md:max-w-[35vw] max-h-[60vh] md:max-h-[80vh] object-contain rounded-xl shadow-2xl"
           alt=""
         />
 
@@ -626,7 +648,7 @@ setFullText(reconstructed.trim())
       </div>
 
       {/* TEXTE */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 w-full w-full md:w-[420px] max-h-[45vh] md:max-h-[80vh] overflow-y-auto mt-4">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-7 w-full md:max-w-[520px] lg:max-w-[600px] max-h-[50vh] md:max-h-[80vh] overflow-y-auto overflow-x-hidden mt-2 md:mt-4">
 
         <h3 className="text-sm text-neutral-400 mb-4">
           Texte extrait
@@ -676,7 +698,7 @@ setFullText(reconstructed.trim())
             <textarea
               value={fullText}
               onChange={(e) => setFullText(e.target.value)}
-              className="w-full h-[30vh] md:h-[60vh] bg-neutral-800 text-sm leading-relaxed p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap"
+              className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap break-words overflow-x-hidden"
             />
             <div className="flex flex-col sm:flex-row gap-3">
 
@@ -724,13 +746,14 @@ setFullText(reconstructed.trim())
       onChange={handleUpload}
     />
 
-    <input
-      ref={fileInputGallery}
-      type="file"
-      accept="image/*"
-      style={{ display: "none" }}
-      onChange={handleUpload}
-    />
+  <input
+    ref={fileInputGallery}
+    type="file"
+    accept="image/*"
+    multiple
+    style={{ display: "none" }}
+    onChange={handleUpload}
+  />
 
     </main>
   )

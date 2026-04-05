@@ -13,7 +13,7 @@ type Pearl = {
   content: string
   source: string | null
   theme: string | null
-  tags: string | null
+  tags: string[] | null
   created_at: string
 }
 
@@ -29,7 +29,7 @@ const [allTags,setAllTags] = useState<string[]>([])
 
 const [search,setSearch] = useState("")
 const [activeTheme,setActiveTheme] = useState<string | null>(null)
-const [activeTag,setActiveTag] = useState<string | null>(null)
+const [activeTags,setActiveTags] = useState<string[]>([])
 
 const [loading,setLoading] = useState(true)
 
@@ -52,7 +52,7 @@ if(themeParam) setActiveTheme(themeParam)
 
 useEffect(()=>{
 filterPearls()
-},[search,activeTheme,activeTag,pearls])
+},[search,activeTheme,activeTags,pearls])
 
 async function fetchPearls(){
 
@@ -65,13 +65,15 @@ const {data,error} = await supabase
 
 if(error){
 console.error(error)
+setLoading(false)
 return
 }
 
-setPearls(data || [])
-setLoading(false)
+const list = data || []
 
-extractTags(data || [])
+setPearls(list)
+extractTags(list)
+setLoading(false)
 
 }
 
@@ -88,15 +90,15 @@ setThemes(data.map(t=>t.name))
 
 }
 
-function extractTags(list:Pearl[]){
+function extractTags(list: Pearl[]) {
 
 const tagSet = new Set<string>()
 
-list.forEach(p=>{
-if(!p.tags) return
+list.forEach(p => {
+if (!p.tags) return
 
-p.tags.split(" ").forEach(tag=>{
-if(tag.trim()) tagSet.add(tag)
+p.tags.forEach(tag => {
+if (tag.trim()) tagSet.add(tag)
 })
 })
 
@@ -112,18 +114,24 @@ if(activeTheme){
 list = list.filter(p=>p.theme === activeTheme)
 }
 
-if(activeTag){
-list = list.filter(p=>p.tags?.includes(activeTag))
+if(activeTags.length){
+list = list.filter(p =>
+activeTags.every(tag => p.tags?.includes(tag))
+)
 }
 
 if(search){
 
-const words = search.toLowerCase().split(" ")
+const words = search
+.toLowerCase()
+.split(" ")
+.map(w => w.trim())
+.filter(Boolean)
 
-list = list.filter(p=>
-words.some(word=>
+list = list.filter(p =>
+words.every(word =>
 p.content?.toLowerCase().includes(word) ||
-p.tags?.toLowerCase().includes(word) ||
+(p.tags?.some(tag => tag.toLowerCase().includes(word)) ?? false) ||
 p.source?.toLowerCase().includes(word) ||
 p.theme?.toLowerCase().includes(word)
 )
@@ -132,6 +140,16 @@ p.theme?.toLowerCase().includes(word)
 }
 
 setFilteredPearls(list)
+
+}
+
+function toggleTag(tag: string){
+
+setActiveTags(prev =>
+prev.includes(tag)
+? prev.filter(t => t !== tag)
+: [...prev, tag]
+)
 
 }
 
@@ -149,7 +167,10 @@ const {data,error} = await supabase
 content,
 source,
 theme,
-tags
+tags: tags
+  .split(" ")
+  .map(t => t.trim().toLowerCase())
+  .filter(Boolean)
 })
 .select()
 .single()
@@ -189,7 +210,7 @@ function resetFilters(){
 
 setSearch("")
 setActiveTheme(null)
-setActiveTag(null)
+setActiveTags([])
 
 }
 
@@ -284,9 +305,9 @@ activeTheme === t
 
 <button
 key={tag}
-onClick={()=>setActiveTag(tag)}
+onClick={()=>toggleTag(tag)}
 className={`text-xs px-3 py-1 rounded-full border ${
-activeTag === tag
+activeTags.includes(tag)
 ? "bg-white text-black"
 : "bg-neutral-900 border-neutral-800 text-neutral-400"
 }`}
@@ -355,20 +376,18 @@ className="text-xs uppercase tracking-wide text-neutral-500 mb-4 hover:text-whit
 
 )}
 
-{pearl.tags &&(
+{pearl.tags && (
 
 <div className="flex flex-wrap gap-2">
 
-{[...new Set(pearl.tags.split(" ").filter(Boolean))].map((tag,i)=>(
-
+{pearl.tags.map(tag => (
 <button
-key={`${tag}-${i}`}
-onClick={()=>setActiveTag(tag)}
+key={tag}
+onClick={() => toggleTag(tag)}
 className="text-xs bg-neutral-800 px-2 py-1 rounded-md text-neutral-400 hover:bg-neutral-700"
 >
 #{tag}
 </button>
-
 ))}
 
 </div>
