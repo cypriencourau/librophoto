@@ -9,6 +9,7 @@ type Capture = {
   id: string
   image_url: string
   created_at: string
+  scanned?: boolean
 }
 
 type Book = {
@@ -49,6 +50,7 @@ export default function BookPage() {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [selectedWords, setSelectedWords] = useState<number[]>([])
   const [fullText, setFullText] = useState("")
+  const [scannedIds, setScannedIds] = useState<string[]>([])
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const touchStartX = useRef<number | null>(null)
@@ -98,6 +100,14 @@ export default function BookPage() {
 
         if (bookData) setBook(bookData)
         setCaptures(captureData ?? [])
+
+        // ✅ AJOUT ICI
+        const scanned = (captureData || [])
+          .filter(c => c.scanned === true)
+          .map(c => c.id)
+
+        setScannedIds(scanned)
+
         setMenuOpen(false)
 
         fetchPearls()
@@ -183,13 +193,35 @@ reconstructed = reconstructed
 
 setFullText(reconstructed.trim())
 
-    } catch (error) {
-      console.error("Erreur OCR :", error)
-    } finally {
-      setExtracting(false)
-    }
-  }
+if (selectedIndex !== null) {
+  const id = captures[selectedIndex]?.id
+  if (id) {
+    // ✅ sauvegarde en base (persistant)
+    await supabase
+      .from("captures")
+      .update({ scanned: true })
+      .eq("id", id)
 
+    // ⚡ mise à jour immédiate UI
+    setScannedIds(prev =>
+      prev.includes(id) ? prev : [...prev, id]
+    )
+
+    // 🧠 garde captures sync (important pour refresh visuel)
+    setCaptures(prev =>
+      prev.map(c =>
+        c.id === id ? { ...c, scanned: true } : c
+      )
+    )
+  }
+}
+
+} catch (error) {
+  console.error("Erreur OCR :", error)
+} finally {
+  setExtracting(false)
+}
+}
   
   // ================= GARDER UNE PERLE OCR =================
 
@@ -504,41 +536,45 @@ setFullText(reconstructed.trim())
 
       )}
 
-      {/* GRID */}
-      {tab === "photos" && (
-        <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
+    {/* GRID */}
+{tab === "photos" && (
+  <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
 
-      {uploadingPreview.map((url, i) => (
-        <div
-          key={i}
-          className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
-        >
-          <img
-            src={url}
-            className="w-full h-full object-cover opacity-70"
-            alt=""
-          />
-        </div>
-      ))}
-      
-      {captures.map((capture, index) => (
-        <div
-          key={capture.id}
-          className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
-        >
-
-          {/* IMAGE */}
-          <img
-            src={capture.image_url}
-            onClick={() => setSelectedIndex(index)}
-            className="w-full h-full object-cover cursor-pointer"
-            alt=""
-          />
-
-        </div>
-      ))}
+    {uploadingPreview.map((url, i) => (
+      <div
+        key={i}
+        className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
+      >
+        <img
+          src={url}
+          className="w-full h-full object-cover opacity-70"
+          alt=""
+        />
       </div>
-      )}
+    ))}
+
+    {captures.map((capture, index) => (
+      <div
+        key={capture.id}
+        className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
+      >
+        <img
+          src={capture.image_url}
+          onClick={() => setSelectedIndex(index)}
+          className="w-full h-full object-cover cursor-pointer"
+          alt=""
+        />
+
+        {capture.scanned && (
+          <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
+            ✓
+          </div>
+        )}
+      </div>
+    ))}
+
+  </div>
+)}
 
       {/* MODAL */}
         
