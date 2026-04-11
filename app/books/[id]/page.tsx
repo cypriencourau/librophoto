@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 import { Trash2, X } from "lucide-react"
+import imageCompression from "browser-image-compression"
 
 type Capture = {
   id: string
@@ -253,9 +254,9 @@ if (selectedIndex !== null) {
 
       }
 
-  // ================= UPLOAD PHOTO =================
+// ================= UPLOAD PHOTO =================
 
-    async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const files = e.target.files
   if (!files || !bookId) return
 
@@ -264,48 +265,65 @@ if (selectedIndex !== null) {
   setMenuOpen(false)
 
   try {
-    // previews multiples
     const previews = fileArray.map(file => URL.createObjectURL(file))
     setUploadingPreview(previews)
 
     await Promise.all(
       fileArray.map(async (file) => {
-        const safeName = file.name
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9.-]/g, "")
-
-        const fileName = `${bookId}/${Date.now()}-${safeName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from("captures")
-          .upload(fileName, file)
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError)
-          return
-        }
-
-        const { data } = supabase.storage
-          .from("captures")
-          .getPublicUrl(fileName)
-
-        const { data: newCapture, error: insertError } = await supabase
-          .from("captures")
-          .insert({
-            book_id: bookId,
-            image_url: data.publicUrl
+        try {
+          const compressedFile = await imageCompression(file, {
+            maxSizeMB: 0.4,
+            maxWidthOrHeight: 1600,
+            useWebWorker: true,
+            initialQuality: 0.7
           })
-          .select()
-          .single()
 
-        if (insertError) {
-          console.error("Insert error:", insertError)
-          return
-        }
+          console.log(
+            `Avant: ${(file.size / 1024 / 1024).toFixed(2)} MB → Après: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`
+          )
 
-        if (newCapture) {
-          setCaptures(prev => [newCapture, ...prev])
+          const safeName = file.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9.-]/g, "")
+
+          const fileName = `${bookId}/${Date.now()}-${safeName}`
+
+          const { error: uploadError } = await supabase.storage
+            .from("captures")
+            .upload(fileName, compressedFile, {
+              contentType: compressedFile.type
+            })
+
+          if (uploadError) {
+            console.error("Upload error:", uploadError)
+            return
+          }
+
+          const { data } = supabase.storage
+            .from("captures")
+            .getPublicUrl(fileName)
+
+          const { data: newCapture, error: insertError } = await supabase
+            .from("captures")
+            .insert({
+              book_id: bookId,
+              image_url: data.publicUrl
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error("Insert error:", insertError)
+            return
+          }
+
+          if (newCapture) {
+            setCaptures(prev => [newCapture, ...prev])
+          }
+
+        } catch (err) {
+          console.error("Erreur sur une image :", err)
         }
       })
     )
@@ -313,9 +331,10 @@ if (selectedIndex !== null) {
   } catch (err) {
     console.error("Global upload error:", err)
   } finally {
-    setUploadingPreview([])
-    e.target.value = ""
-  }
+  uploadingPreview.forEach(url => URL.revokeObjectURL(url))
+  setUploadingPreview([])
+  e.target.value = ""
+}
 }
 
     // ======== SUPPR PHOTO==========
@@ -558,13 +577,11 @@ if (selectedIndex !== null) {
         key={capture.id}
         className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
       >
-        <img
-          src={capture.image_url}
-          onClick={() => setSelectedIndex(index)}
-          className="w-full h-full object-cover cursor-pointer"
-          alt=""
-        />
-
+      <img
+        src={capture.image_url}
+        loading="lazy"
+        decoding="async"
+      />
         {capture.scanned && (
           <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
             ✓
