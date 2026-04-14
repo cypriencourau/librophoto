@@ -710,7 +710,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
           Texte extrait
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
         {fullText === "" && !extracting && (
           <div className="mt-6">
             <button
@@ -751,12 +751,13 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
         {fullText !== "" && (
           <>
+          <div className="space-y-5 mt-4"></div>
             <textarea
               value={fullText}
               onChange={(e) => setFullText(e.target.value)}
               className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap break-words overflow-x-hidden"
             />
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
 
             <button
             onClick={createPearlFromOCR}
