@@ -45,14 +45,22 @@ export default function BooksPage() {
             image_url
           )
         `)
-        .order("created_at",{ascending:true})
+        .order("created_at",{ascending:false})
 
       if(error) throw error
 
-      const booksWithCover = (data || []).map((book:any)=>({
-        ...book,
-        cover: book.cover || book.captures?.[0]?.image_url || null
-      }))
+      const booksWithCover = (data || []).map((book:any)=>{
+
+        const sortedCaptures = (book.captures || [])
+          .sort((a:any, b:any) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+
+        return {
+          ...book,
+          cover: book.cover || sortedCaptures[0]?.image_url || null
+        }
+      })
 
       setBooks(booksWithCover)
 
