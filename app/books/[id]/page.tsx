@@ -321,6 +321,14 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
           if (newCapture) {
             setCaptures(prev => [...prev, newCapture])
+
+            // ✅ si c'est la première image → définir cover
+            if (captures.length === 0) {
+              await supabase
+                .from("books")
+                .update({ cover: newCapture.image_url })
+                .eq("id", bookId)
+            }
           }
 
         } catch (err) {
