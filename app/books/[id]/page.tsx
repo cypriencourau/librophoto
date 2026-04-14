@@ -656,8 +656,10 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
           alt=""
         />
 
+
+//voir les blocs jaunes de sélection des mots en OCR
         {ocrWords.length > 0 && imageLoaded && imageRef.current && (
-          <div className="hidden md:block">
+          <div className="hidden">
             {ocrWords
               .filter((word) => {
                 const img = imageRef.current!
