@@ -575,6 +575,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     {captures.map((capture, index) => (
       <div
         key={capture.id}
+        onClick={() => setSelectedIndex(index)}
         className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
       >
       <img
