@@ -49,12 +49,20 @@ export default function BooksPage() {
 
       if(error) throw error
 
-      const booksWithCover = (data || []).map((book:any)=>{
+      const booksWithCover = (data || []).map((book:any) => {
 
         const sortedCaptures = (book.captures || [])
-          .sort((a:any, b:any) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          )
+          .sort((a:any, b:any) => {
+
+            const dateDiff =
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+
+            if (dateDiff !== 0) return dateDiff
+
+            // fallback si même timestamp
+            return a.id.localeCompare(b.id)
+          })
 
         return {
           ...book,
