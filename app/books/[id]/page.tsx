@@ -97,7 +97,7 @@ export default function BookPage() {
         .from("captures")
         .select("*")
         .eq("book_id", bookId)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: true })
 
         if (bookData) setBook(bookData)
         setCaptures(captureData ?? [])
@@ -260,7 +260,9 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const files = e.target.files
   if (!files || !bookId) return
 
-  const fileArray = Array.from(files)
+  const fileArray = Array.from(files).sort((a, b) => {
+  return a.lastModified - b.lastModified
+  })
 
   setMenuOpen(false)
 
@@ -268,8 +270,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const previews = fileArray.map(file => URL.createObjectURL(file))
     setUploadingPreview(previews)
 
-    await Promise.all(
-      fileArray.map(async (file) => {
+      for (const file of fileArray) {
         try {
           const compressedFile = await imageCompression(file, {
             maxSizeMB: 0.4,
@@ -319,14 +320,13 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
           }
 
           if (newCapture) {
-            setCaptures(prev => [newCapture, ...prev])
+            setCaptures(prev => [...prev, newCapture])
           }
 
         } catch (err) {
           console.error("Erreur sur une image :", err)
         }
-      })
-    )
+      }
 
   } catch (err) {
     console.error("Global upload error:", err)
@@ -481,6 +481,17 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
       <div className="flex gap-2 px-4 pt-4 max-w-6xl mx-auto">
 
+        <button
+      onClick={()=>setTab("photos")}
+      className={`px-3 py-1.5 text-sm rounded-lg ${
+      tab==="photos"
+      ? "bg-white text-black"
+      : "bg-neutral-800 text-neutral-300"
+      }`}
+      >
+      Photos
+      </button>
+
       <button
       onClick={()=>setTab("pearls")}
       className={`px-3 py-1.5 text-sm rounded-lg ${
@@ -492,18 +503,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
       Perles
       </button>
 
-      <button
-      onClick={()=>setTab("photos")}
-      className={`px-3 py-1.5 text-sm rounded-lg ${
-      tab==="photos"
-      ? "bg-white text-black"
-      : "bg-neutral-800 text-neutral-300"
-      }`}
-      >
-      Photos
-      </button>
-
-      </div>
+            </div>
 
       {/* PASSAGES DU LIVRE */}
 
@@ -644,7 +644,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     {/* CONTENU */}
     <div
       onClick={(e) => e.stopPropagation()}
-      className="flex flex-col md:flex-row gap-6 items-center md:items-start w-full max-w-6xl px-4 md:px-10" >
+      className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-start w-full max-w-6xl px-4 md:px-10">
 
       {/* IMAGE */}
       <div className="relative w-full">
@@ -652,7 +652,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
           ref={imageRef}
           src={captures[selectedIndex].image_url}
           onLoad={() => setImageLoaded(true)}
-          className="w-full md:max-w-[35vw] max-h-[60vh] md:max-h-[80vh] object-contain rounded-xl shadow-2xl"
+          className="w-full md:max-w-[35vw] max-h-[50vh] md:max-h-[80vh] object-contain rounded-xl shadow-2xl"
           alt=""
         />
 
@@ -702,7 +702,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
       </div>
 
       {/* TEXTE */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-7 w-full md:max-w-[520px] lg:max-w-[600px] max-h-[50vh] md:max-h-[80vh] overflow-y-auto overflow-x-hidden mt-2 md:mt-4">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-7 w-full md:max-w-[520px] lg:max-w-[600px] h-[45vh] md:h-auto md:max-h-[80vh] overflow-y-auto mt-2 md:mt-4">
 
         <h3 className="text-sm text-neutral-400 mb-4">
           Texte extrait
