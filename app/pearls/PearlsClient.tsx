@@ -27,10 +27,6 @@ const [filteredPearls,setFilteredPearls] = useState<Pearl[]>([])
 const [themes,setThemes] = useState<string[]>([])
 const [allTags,setAllTags] = useState<string[]>([])
 const [tagSearch, setTagSearch] = useState("")
-const filteredTags = allTags.filter(tag =>
-  tag.toLowerCase().includes((tagSearch || "").toLowerCase())
-)
-
 
 const [search,setSearch] = useState("")
 const [activeTheme,setActiveTheme] = useState<string | null>(null)
@@ -57,8 +53,8 @@ if(themeParam) setActiveTheme(themeParam)
 },[params])
 
 useEffect(()=>{
-filterPearls()
-},[search,activeTheme,activeTags,pearls])
+  filterPearls()
+},[search, activeTheme, activeTags, pearls, tagSearch])
 
 async function fetchPearls(){
 
@@ -143,6 +139,16 @@ p.theme?.toLowerCase().includes(word)
 )
 )
 
+}
+
+if (tagSearch) {
+  const searchTag = tagSearch.toLowerCase()
+
+  list = list.filter(p =>
+    p.tags?.some(tag =>
+      tag.toLowerCase().includes(searchTag)
+    )
+  )
 }
 
 setFilteredPearls(list)
@@ -304,38 +310,29 @@ activeTheme === t
 </div>
 
 
+{/* TAG FILTER */}
+<div className="mb-8">
 
-{/* TAG SEARCH */}
-<div className="mb-4">
-    <div className="text-xs text-neutral-500 mb-1">
-    Filtrer les tags
+  <div className="text-sm text-neutral-400 mb-2">
+    Filtrer par tag
   </div>
-  <input
-    placeholder="Rechercher un tag..."
-    value={tagSearch}
-    onChange={(e) => setTagSearch(e.target.value)}
-    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
-  />
-</div>
 
-{/* TAGS */}
-<div className="flex flex-wrap gap-2 mb-12">
+  {tagSearch && (
+    <div className="text-xs text-neutral-500 mb-2">
+      Filtre tag actif : #{tagSearch}
+    </div>
+  )}
 
-{filteredTags.map(tag => (
+  <div className="relative">
+    <Search size={16} className="absolute left-3 top-2.5 text-neutral-500" />
 
-<button
-key={tag}
-onClick={()=>toggleTag(tag)}
-className={`text-xs px-3 py-1 rounded-full border ${
-activeTags.includes(tag)
-? "bg-white text-black"
-: "bg-neutral-900 border-neutral-800 text-neutral-400"
-}`}
->
-#{tag}
-</button>
-
-))}
+    <input
+      placeholder="Ex: silence, foi..."
+      value={tagSearch}
+      onChange={(e) => setTagSearch(e.target.value)}
+      className="w-full bg-neutral-800 border border-neutral-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
+    />
+  </div>
 
 </div>
 
