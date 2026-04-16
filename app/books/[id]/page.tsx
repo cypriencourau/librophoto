@@ -43,7 +43,7 @@ export default function BookPage() {
   const [pearls,setPearls] = useState<any[]>([])
   const [pageNumber,setPageNumber] = useState("")
   const [tagsInput,setTagsInput] = useState("")
-  const [tab,setTab] = useState("pearls")
+  const [tab,setTab] = useState("photos")
   const [search,setSearch] = useState("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
@@ -53,6 +53,8 @@ export default function BookPage() {
   const [selectedWords, setSelectedWords] = useState<number[]>([])
   const [fullText, setFullText] = useState("")
   const [scannedIds, setScannedIds] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const touchStartX = useRef<number | null>(null)
@@ -101,7 +103,13 @@ export default function BookPage() {
         .order("created_at", { ascending: sortOrder === "asc" })
 
         if (bookData) setBook(bookData)
-        setCaptures(captureData ?? [])
+        setCaptures(
+      (captureData ?? []).sort((a, b) =>
+        sortOrder === "asc"
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+    )
 
         // ✅ AJOUT ICI
         const scanned = (captureData || [])
@@ -116,7 +124,7 @@ export default function BookPage() {
     }
 
     fetchData()
-  }, [bookId])
+}, [bookId, sortOrder])
 
   useEffect(() => {
   if (selectedIndex !== null) {
@@ -250,6 +258,12 @@ if (selectedIndex !== null) {
         setFullText("")
         setPageNumber("")
         setTagsInput("")
+
+        setToast("Perle ajoutée ✨")
+
+        setTimeout(() => {
+          setToast(null)
+        }, 2000)
 
         fetchPearls()
 
@@ -574,16 +588,14 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
       )}
 
     {/* SORT BUTTON */}
-    <div className="px-4 max-w-6xl mx-auto mb-2 flex justify-end">
+    <div className="px-4 max-w-6xl mx-auto mb-3 flex justify-end">
       <button
         onClick={() =>
           setSortOrder(prev => (prev === "asc" ? "desc" : "asc"))
         }
-        className="text-xs px-3 py-1 bg-neutral-800 hover:bg-neutral-700 transition rounded-lg"
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 transition text-sm"
       >
-        {sortOrder === "asc"
-          ? "↑ Ancien → Récent"
-          : "↓ Récent → Ancien"}
+        {sortOrder === "asc" ? "↑" : "↓"}
       </button>
     </div>
 
@@ -611,10 +623,27 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
       >
       <img
-        src={capture.image_url}
-        loading="lazy"
-        decoding="async"
-      />
+          src={capture.image_url}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
+        />
+
+         {/* overlay hover */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
+
+        {/* petit label */}
+        <div className="absolute bottom-2 right-2 text-xs bg-black/60 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
+          View
+        </div>
+
+        {capture.scanned && (
+          <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
+            ✓
+          </div>
+        )}
+
+
         {capture.scanned && (
           <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
             ✓
@@ -790,12 +819,16 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
             />
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
 
-            <button
-            onClick={createPearlFromOCR}
-            className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium"
-            >
-            Créer une perle
-            </button>
+        <button
+          onClick={createPearlFromOCR}
+          disabled={saving}
+          className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {saving && (
+            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          )}
+          {saving ? "Création..." : "Créer une perle"}
+        </button>
 
             </div>
           </>
@@ -842,6 +875,16 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     style={{ display: "none" }}
     onChange={handleUpload}
   />
+
+
+{toast && (
+  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+    <div className="bg-white text-black text-sm px-4 py-2 rounded-full shadow-lg animate-fadeIn">
+      {toast}
+    </div>
+  </div>
+)}
+
 
     </main>
   )
