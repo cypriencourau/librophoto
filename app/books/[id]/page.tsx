@@ -229,39 +229,53 @@ if (selectedIndex !== null) {
   
   // ================= GARDER UNE PERLE OCR =================
 
-      async function createPearlFromOCR(){
+  async function createPearlFromOCR() {
+  if (!bookId || !fullText.trim()) return
 
-        if(!bookId || !fullText) return
+  try {
+    setSaving(true)
 
-        const {error} = await supabase
-          .from("pearls")
-          .insert({
-            content: fullText,
-            book_id: bookId,
-            source: book?.title,
-            page: pageNumber ? Number(pageNumber) : null,
-            tags: tagsInput
-          })
+    const { error } = await supabase
+      .from("pearls")
+      .insert({
+        content: fullText.trim(),
+        book_id: bookId,
+        source: book?.title,
+        page: pageNumber ? Number(pageNumber) : null,
+        tags: tagsInput?.trim() || null
+      })
 
-        if(error){
-          console.error(error)
-          alert("Erreur création perle")
-          return
-        }
+    if (error) throw error
 
-        setFullText("")
-        setPageNumber("")
-        setTagsInput("")
+    // reset UI
+    setFullText("")
+    setPageNumber("")
+    setTagsInput("")
 
-        setToast("Perle ajoutée ✨")
+    // refresh data
+    fetchPearls()
 
-        setTimeout(() => {
-          setToast(null)
-        }, 2000)
+    // toast success
+    setToast("✨ Perle ajoutée")
+    
+    setTimeout(() => {
+      setToast(null)
+    }, 2000)
 
-        fetchPearls()
+  } catch (err) {
+    console.error(err)
 
-      }
+    // toast erreur clean (pas d'alert)
+    setToast("Erreur lors de l’ajout")
+    
+    setTimeout(() => {
+      setToast(null)
+    }, 2000)
+
+  } finally {
+    setSaving(false)
+  }
+}
 
 // ================= UPLOAD PHOTO =================
 
