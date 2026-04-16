@@ -120,15 +120,18 @@ export default function BookPage() {
     fetchData()
 }, [bookId, sortOrder])
 
-  useEffect(() => {
+useEffect(() => {
   if (selectedIndex !== null) {
     document.body.style.overflow = "hidden"
+    document.body.classList.add("hide-nav")
   } else {
     document.body.style.overflow = "auto"
+    document.body.classList.remove("hide-nav")
   }
 
   return () => {
     document.body.style.overflow = "auto"
+    document.body.classList.remove("hide-nav")
   }
 }, [selectedIndex])
  

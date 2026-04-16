@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Enodia",
-  description: "Grandir sur le chemin de la foi",
+  title: "LibroPhoto",
+  description: "Faire mémoire des livres",
 }
 
 export default function RootLayout({

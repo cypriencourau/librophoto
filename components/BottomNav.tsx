@@ -16,7 +16,7 @@ export default function BottomNav() {
 
   return (
 
-    <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50">
+    <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 hide-when-modal transition-all duration-300">
 
       <nav className="bg-neutral-900 border border-neutral-800 rounded-2xl px-6 py-3 flex gap-10 shadow-xl backdrop-blur">
 

@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.hide-nav .hide-when-modal {
+  transform: translateY(120%);
+  opacity: 0;
+  pointer-events: none;
+}
