@@ -42,7 +42,9 @@ export default function BooksPage() {
         .select(`
           *,
           captures (
-            image_url
+            id,
+            image_url,
+            created_at
           )
         `)
         .order("created_at",{ascending:false})

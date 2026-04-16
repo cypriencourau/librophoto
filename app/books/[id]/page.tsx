@@ -45,6 +45,7 @@ export default function BookPage() {
   const [tagsInput,setTagsInput] = useState("")
   const [tab,setTab] = useState("pearls")
   const [search,setSearch] = useState("")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
   const [ocrWords, setOcrWords] = useState<OCRWord[]>([])
   const [extracting, setExtracting] = useState(false)
@@ -97,7 +98,7 @@ export default function BookPage() {
         .from("captures")
         .select("*")
         .eq("book_id", bookId)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: sortOrder === "asc" })
 
         if (bookData) setBook(bookData)
         setCaptures(captureData ?? [])
@@ -268,6 +269,11 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
   try {
     const previews = fileArray.map(file => URL.createObjectURL(file))
+    useEffect(() => {
+      return () => {
+        uploadingPreview.forEach(url => URL.revokeObjectURL(url))
+      }
+    }, [])
     setUploadingPreview(previews)
 
       for (const file of fileArray) {
@@ -319,17 +325,20 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
             return
           }
 
-          if (newCapture) {
-            setCaptures(prev => [...prev, newCapture])
+        if (newCapture) {
+          setCaptures(prev => {
+            const updated = [...prev, newCapture]
 
-            // ✅ si c'est la première image → définir cover
-            if (captures.length === 0) {
-              await supabase
+            if (prev.length === 0) {
+              supabase
                 .from("books")
                 .update({ cover: newCapture.image_url })
                 .eq("id", bookId)
             }
-          }
+
+            return updated
+          })
+        }
 
         } catch (err) {
           console.error("Erreur sur une image :", err)
@@ -350,7 +359,8 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
   if (!confirm("Supprimer cette photo ?")) return
 
   try {
-    const path = capture.image_url.split("/captures/")[1]
+    const url = new URL(capture.image_url)
+    const path = url.pathname.split("/captures/")[1]
 
     // supprimer du storage
     await supabase.storage
@@ -562,6 +572,20 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
       </div>
 
       )}
+
+    {/* SORT BUTTON */}
+    <div className="px-4 max-w-6xl mx-auto mb-2 flex justify-end">
+      <button
+        onClick={() =>
+          setSortOrder(prev => (prev === "asc" ? "desc" : "asc"))
+        }
+        className="text-xs px-3 py-1 bg-neutral-800 hover:bg-neutral-700 transition rounded-lg"
+      >
+        {sortOrder === "asc"
+          ? "↑ Ancien → Récent"
+          : "↓ Récent → Ancien"}
+      </button>
+    </div>
 
     {/* GRID */}
 {tab === "photos" && (
