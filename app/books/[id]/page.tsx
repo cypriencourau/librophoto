@@ -103,13 +103,7 @@ export default function BookPage() {
         .order("created_at", { ascending: sortOrder === "asc" })
 
         if (bookData) setBook(bookData)
-        setCaptures(
-      (captureData ?? []).sort((a, b) =>
-        sortOrder === "asc"
-          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-    )
+      setCaptures(captureData ?? [])
 
         // ✅ AJOUT ICI
         const scanned = (captureData || [])
@@ -620,7 +614,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
       <div
         key={capture.id}
         onClick={() => setSelectedIndex(index)}
-        className="relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden"
+       className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
       >
       <img
           src={capture.image_url}
@@ -636,13 +630,6 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         <div className="absolute bottom-2 right-2 text-xs bg-black/60 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
           View
         </div>
-
-        {capture.scanned && (
-          <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
-            ✓
-          </div>
-        )}
-
 
         {capture.scanned && (
           <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
