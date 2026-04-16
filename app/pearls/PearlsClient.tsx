@@ -26,8 +26,9 @@ const [filteredPearls,setFilteredPearls] = useState<Pearl[]>([])
 
 const [themes,setThemes] = useState<string[]>([])
 const [allTags,setAllTags] = useState<string[]>([])
+const [tagSearch, setTagSearch] = useState("")
 const filteredTags = allTags.filter(tag =>
-  tag.toLowerCase().includes(tagSearch.toLowerCase())
+  tag.toLowerCase().includes((tagSearch || "").toLowerCase())
 )
 
 
@@ -43,7 +44,7 @@ const [source,setSource] = useState("")
 const [theme,setTheme] = useState("")
 const [tags,setTags] = useState("")
 const [creating,setCreating] = useState(false)
-const [tagSearch, setTagSearch] = useState("")
+
 
 useEffect(()=>{
 fetchPearls()
@@ -306,11 +307,14 @@ activeTheme === t
 
 {/* TAG SEARCH */}
 <div className="mb-4">
+    <div className="text-xs text-neutral-500 mb-1">
+    Filtrer les tags
+  </div>
   <input
     placeholder="Rechercher un tag..."
     value={tagSearch}
     onChange={(e) => setTagSearch(e.target.value)}
-    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white"
+    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
   />
 </div>
 
