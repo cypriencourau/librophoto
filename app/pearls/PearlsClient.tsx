@@ -312,9 +312,9 @@ activeTheme === t
 
 {/* TAG FILTER */}
 {/* TAG FILTER */}
-<div className="mb-12 mt-6">
+<div className="mb-12 mt-6 bg-neutral-900/60 border border-neutral-700 rounded-2xl p-4">
 
-  <div className="text-sm text-neutral-400 mb-3 font-medium">
+  <div className="text-sm text-white mb-3 font-semibold">
     Filtrer par tag
   </div>
 
@@ -326,7 +326,7 @@ activeTheme === t
       placeholder="Ex: vocation, silence..."
       value={tagSearch}
       onChange={(e) => setTagSearch(e.target.value)}
-      className="w-full bg-neutral-900 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
+      className="w-full bg-black border border-white/30 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
     />
   </div>
 
