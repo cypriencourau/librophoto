@@ -64,7 +64,7 @@ if(themeParam) setActiveTheme(themeParam)
 
 useEffect(()=>{
   filterPearls()
-},[search, activeTheme, activeTags, pearls, tagSearch])
+},[search, activeTheme, activeTags, pearls])
 
 async function fetchPearls(){
 
@@ -312,9 +312,9 @@ activeTheme === t
 
 {/* TAG FILTER */}
 {/* TAG FILTER */}
-<div className="mb-10">
+<div className="mb-12 mt-6">
 
-  <div className="text-sm text-neutral-400 mb-2">
+  <div className="text-sm text-neutral-400 mb-3 font-medium">
     Filtrer par tag
   </div>
 
@@ -326,7 +326,7 @@ activeTheme === t
       placeholder="Ex: vocation, silence..."
       value={tagSearch}
       onChange={(e) => setTagSearch(e.target.value)}
-      className="w-full bg-neutral-800 border border-neutral-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
+      className="w-full bg-neutral-900 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
     />
   </div>
 
@@ -347,6 +347,21 @@ activeTheme === t
       ))}
     </div>
   )}
+
+  {/* TAGS PAR DÉFAUT */}
+{!tagSearch && (
+  <div className="flex flex-wrap gap-2 mt-3">
+    {allTags.slice(0, 20).map(tag => (
+      <button
+        key={tag}
+        onClick={() => toggleTag(tag)}
+        className="px-3 py-1.5 bg-neutral-800 border border-neutral-700 hover:bg-white hover:text-black text-xs rounded-full transition"
+      >
+        #{tag}
+      </button>
+    ))}
+  </div>
+)}
 
   {/* TAGS ACTIFS */}
   {activeTags.length > 0 && (
