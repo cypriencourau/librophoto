@@ -348,20 +348,6 @@ activeTheme === t
     </div>
   )}
 
-  {/* TAGS PAR DÉFAUT */}
-{!tagSearch && (
-  <div className="flex flex-wrap gap-2 mt-3">
-    {allTags.slice(0, 20).map(tag => (
-      <button
-        key={tag}
-        onClick={() => toggleTag(tag)}
-        className="px-3 py-1.5 bg-neutral-800 border border-neutral-700 hover:bg-white hover:text-black text-xs rounded-full transition"
-      >
-        #{tag}
-      </button>
-    ))}
-  </div>
-)}
 
   {/* TAGS ACTIFS */}
   {activeTags.length > 0 && (
