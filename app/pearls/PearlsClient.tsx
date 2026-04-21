@@ -309,7 +309,6 @@ activeTheme === t
 
 </div>
 
-
 {/* TAG FILTER */}
 {/* TAG FILTER */}
 <div className="mb-12 mt-6 bg-neutral-900/60 border border-neutral-700 rounded-2xl p-4">
@@ -367,6 +366,7 @@ activeTheme === t
   )}
 
 </div>
+
 
 {/* LIST */}
 

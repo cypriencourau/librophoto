@@ -18,6 +18,12 @@ export default function Library(){
 const [pearls,setPearls] = useState<Pearl[]>([])
 const [themes,setThemes] = useState<string[]>([])
 const [tags,setTags] = useState<string[]>([])
+const [tagSearch,setTagSearch] = useState("")
+const filteredTagSuggestions = tags
+  .filter(tag =>
+    tag.toLowerCase().includes(tagSearch.toLowerCase())
+  )
+  .slice(0, 8)
 
 const [search,setSearch] = useState("")
 const [activeTheme,setActiveTheme] = useState<string | null>(null)
@@ -326,25 +332,59 @@ className="text-[13px] px-3 py-1.5 rounded-full border border-neutral-700 hover:
 
 
 
-{/* TAGS */}
+{/* TAG SEARCH */}
+<div className="mb-10 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4">
 
-<div className="flex flex-wrap gap-2 mb-10">
+  <div className="text-sm text-white mb-3 font-semibold">
+    Filtrer par tag
+  </div>
 
-{tags.map(t=>(
+  {/* INPUT */}
+  <div className="relative">
+    <Search size={16} className="absolute left-3 top-2.5 text-neutral-500" />
 
-<button
-key={t}
-onClick={()=>toggleTag(t)}
-className={`text-[13px] px-3 py-1.5 rounded-full border transition ${
-activeTags.includes(t)
-? "bg-white text-black"
-: "border-neutral-800 hover:border-neutral-600"
-}`}
->
-#{t}
-</button>
+    <input
+      value={tagSearch}
+      onChange={(e)=>setTagSearch(e.target.value)}
+      placeholder="Ex: vocation, silence..."
+      className="w-full bg-black border border-white/20 rounded-xl pl-10 pr-4 py-3 text-sm"
+    />
+  </div>
 
-))}
+  {/* SUGGESTIONS */}
+  {tagSearch && filteredTagSuggestions.length > 0 && (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {filteredTagSuggestions.map(tag => (
+        <button
+          key={tag}
+          onClick={()=>{
+            toggleTag(tag)
+            setTagSearch("")
+          }}
+          className="px-3 py-1.5 bg-neutral-800 border border-neutral-700 hover:bg-white hover:text-black text-xs rounded-full"
+        >
+          #{tag}
+        </button>
+      ))}
+    </div>
+  )}
+
+  {/* TAGS ACTIFS */}
+  {activeTags.length > 0 && (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {activeTags.map(tag => (
+        <div
+          key={tag}
+          className="flex items-center gap-1 px-3 py-1 bg-white text-black text-xs rounded-full"
+        >
+          #{tag}
+          <button onClick={()=>toggleTag(tag)}>
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
 
 </div>
 
