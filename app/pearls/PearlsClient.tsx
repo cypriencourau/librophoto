@@ -27,6 +27,16 @@ const [filteredPearls,setFilteredPearls] = useState<Pearl[]>([])
 const [themes,setThemes] = useState<string[]>([])
 const [allTags,setAllTags] = useState<string[]>([])
 const [tagSearch, setTagSearch] = useState("")
+const filteredTagSuggestions = allTags
+  .filter(tag =>
+    tag.toLowerCase().includes(tagSearch.toLowerCase())
+  )
+  .sort((a, b) => {
+    const aStarts = a.toLowerCase().startsWith(tagSearch.toLowerCase())
+    const bStarts = b.toLowerCase().startsWith(tagSearch.toLowerCase())
+    return Number(bStarts) - Number(aStarts)
+  })
+  .slice(0, 8)
 
 const [search,setSearch] = useState("")
 const [activeTheme,setActiveTheme] = useState<string | null>(null)
@@ -139,16 +149,6 @@ p.theme?.toLowerCase().includes(word)
 )
 )
 
-}
-
-if (tagSearch) {
-  const searchTag = tagSearch.toLowerCase()
-
-  list = list.filter(p =>
-    p.tags?.some(tag =>
-      tag.toLowerCase().includes(searchTag)
-    )
-  )
 }
 
 setFilteredPearls(list)
@@ -311,28 +311,59 @@ activeTheme === t
 
 
 {/* TAG FILTER */}
-<div className="mb-8">
+{/* TAG FILTER */}
+<div className="mb-10">
 
   <div className="text-sm text-neutral-400 mb-2">
     Filtrer par tag
   </div>
 
-  {tagSearch && (
-    <div className="text-xs text-neutral-500 mb-2">
-      Filtre tag actif : #{tagSearch}
-    </div>
-  )}
-
+  {/* INPUT */}
   <div className="relative">
     <Search size={16} className="absolute left-3 top-2.5 text-neutral-500" />
 
     <input
-      placeholder="Ex: silence, foi..."
+      placeholder="Ex: vocation, silence..."
       value={tagSearch}
       onChange={(e) => setTagSearch(e.target.value)}
       className="w-full bg-neutral-800 border border-neutral-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-white"
     />
   </div>
+
+  {/* SUGGESTIONS */}
+  {tagSearch && filteredTagSuggestions.length > 0 && (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {filteredTagSuggestions.map(tag => (
+        <button
+          key={tag}
+          onClick={() => {
+            toggleTag(tag)
+            setTagSearch("")
+          }}
+          className="px-3 py-1.5 bg-neutral-700 hover:bg-white hover:text-black text-xs rounded-full transition"
+        >
+          #{tag}
+        </button>
+      ))}
+    </div>
+  )}
+
+  {/* TAGS ACTIFS */}
+  {activeTags.length > 0 && (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {activeTags.map(tag => (
+        <div
+          key={tag}
+          className="flex items-center gap-1 px-3 py-1 bg-white text-black text-xs rounded-full"
+        >
+          #{tag}
+          <button onClick={() => toggleTag(tag)}>
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
 
 </div>
 
