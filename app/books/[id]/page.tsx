@@ -120,20 +120,20 @@ export default function BookPage() {
     fetchData()
 }, [bookId, sortOrder])
 
-useEffect(() => {
-  if (selectedIndex !== null) {
-    document.body.style.overflow = "hidden"
-    document.body.classList.add("hide-nav")
-  } else {
-    document.body.style.overflow = "auto"
-    document.body.classList.remove("hide-nav")
-  }
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      document.body.style.overflow = "hidden"
+      document.body.classList.add("hide-nav")
+    } else {
+      document.body.style.overflow = "auto"
+      document.body.classList.remove("hide-nav")
+    }
 
-  return () => {
-    document.body.style.overflow = "auto"
-    document.body.classList.remove("hide-nav")
-  }
-}, [selectedIndex])
+    return () => {
+      document.body.style.overflow = "auto"
+      document.body.classList.remove("hide-nav")
+    }
+  }, [selectedIndex])
  
   // ================= OCR =================
 
@@ -294,11 +294,6 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
   try {
     const previews = fileArray.map(file => URL.createObjectURL(file))
-    useEffect(() => {
-      return () => {
-        uploadingPreview.forEach(url => URL.revokeObjectURL(url))
-      }
-    }, [])
     setUploadingPreview(previews)
 
       for (const file of fileArray) {
@@ -329,7 +324,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
           if (uploadError) {
             console.error("Upload error:", uploadError)
-            return
+            continue
           }
 
           const { data } = supabase.storage
@@ -385,7 +380,7 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 
   try {
     const url = new URL(capture.image_url)
-    const path = url.pathname.split("/captures/")[1]
+    const path = capture.image_url.split("/storage/v1/object/public/captures/")[1]
 
     // supprimer du storage
     await supabase.storage
