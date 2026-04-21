@@ -425,24 +425,6 @@ className="text-xs uppercase tracking-wide text-neutral-500 mb-4 hover:text-whit
 
 )}
 
-{pearl.tags && (
-
-<div className="flex flex-wrap gap-2">
-
-{pearl.tags.map(tag => (
-<button
-key={tag}
-onClick={() => toggleTag(tag)}
-className="text-xs bg-neutral-800 px-2 py-1 rounded-md text-neutral-400 hover:bg-neutral-700"
->
-#{tag}
-</button>
-))}
-
-</div>
-
-)}
-
 </div>
 
 ))}
