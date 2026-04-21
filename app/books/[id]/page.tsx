@@ -100,7 +100,7 @@ export default function BookPage() {
         .from("captures")
         .select("*")
         .eq("book_id", bookId)
-        .order("created_at", { ascending: sortOrder === "asc" })
+        .order("created_at", { ascending: false })
 
         if (bookData) setBook(bookData)
       setCaptures(captureData ?? [])
@@ -286,9 +286,15 @@ async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const files = e.target.files
   if (!files || !bookId) return
 
-  const fileArray = Array.from(files).sort((a, b) => {
-  return a.lastModified - b.lastModified
+const fileArray = Array.from(files)
+  .map((file, index) => ({ file, index }))
+  .sort((a, b) => {
+    if (a.file.lastModified === b.file.lastModified) {
+      return a.index - b.index // garde l'ordre sélectionné
+    }
+    return a.file.lastModified - b.file.lastModified
   })
+  .map(obj => obj.file)
 
   setMenuOpen(false)
 
