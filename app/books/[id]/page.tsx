@@ -508,14 +508,17 @@ const newOrder = arrayMove(captures, oldIndex, newIndex)
 }
 
 function SortableItem({ capture, index, onClick }: any) {
-const {
-  attributes,
-  listeners,
-  setNodeRef,
-  transform,
-  transition,
-  isDragging
-} = useSortable({ id: capture.id })
+
+  const startPos = useRef<{ x: number; y: number } | null>(null)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: capture.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -526,9 +529,22 @@ const {
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => {
-        if (!isDragging) onClick()
+      onPointerDown={(e) => {
+        startPos.current = { x: e.clientX, y: e.clientY }
       }}
+
+      onPointerUp={(e) => {
+      if (!startPos.current) return
+
+      const dx = Math.abs(e.clientX - startPos.current.x)
+      const dy = Math.abs(e.clientY - startPos.current.y)
+
+      const moved = dx > 6 || dy > 6
+
+      if (!moved) {
+        onClick()
+      }
+    }}
       className={`group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer
   ${isDragging ? "opacity-50 scale-95" : ""}
 `}
@@ -539,7 +555,7 @@ const {
       {...attributes}
       {...listeners}
        
-  onClick={(e) => e.stopPropagation()}       // sécurité
+  onPointerDown={(e) => e.stopPropagation()}    // sécurité
       className="absolute inset-0 z-10 cursor-grab touch-none"
     />
 
@@ -568,7 +584,6 @@ const {
     </div>
   )
 }
-
 
 
   // ================= RENDER =================
