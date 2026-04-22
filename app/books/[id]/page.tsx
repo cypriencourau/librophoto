@@ -10,7 +10,10 @@ import { CSS } from "@dnd-kit/utilities"
 
 import {
   DndContext,
-  closestCenter
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors
 } from "@dnd-kit/core"
 
 import {
@@ -75,6 +78,13 @@ export default function BookPage() {
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState<string[]>([])
+  const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8,
+    },
+  })
+)
 
   const fileInputCamera = useRef<HTMLInputElement | null>(null)
   const fileInputGallery = useRef<HTMLInputElement | null>(null)
@@ -503,13 +513,14 @@ async function handleDragEnd(event: any) {
 }
 
 function SortableItem({ capture, index, onClick }: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition
-  } = useSortable({ id: capture.id })
+const {
+  attributes,
+  listeners,
+  setNodeRef,
+  transform,
+  transition,
+  isDragging
+} = useSortable({ id: capture.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -518,28 +529,30 @@ function SortableItem({ capture, index, onClick }: any) {
 
   return (
     <div
-  ref={setNodeRef}
-  style={style}
-  className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
->
+      ref={setNodeRef}
+      style={style}
+      onClick={() => {
+        if (!isDragging) onClick()
+      }}
+      className={`group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer
+  ${isDragging ? "opacity-50 scale-95" : ""}
+`}
+    >
 
   {/* 🔥 ZONE DRAG (en haut) */}
-  <div
-    {...attributes}
-    {...listeners}
-    className="absolute top-0 left-0 w-full h-6 z-10 cursor-grab"
-  />
+    <div
+      {...attributes}
+      {...listeners}
+       
+  onClick={(e) => e.stopPropagation()}       // sécurité
+      className="absolute top-0 left-0 w-full h-6 z-10 cursor-grab"
+    />
 
   {/* 🔥 ZONE CLICK */}
-  <div
-    onClick={onClick}
-    className="w-full h-full"
-  ></div>
     <img
       src={capture.image_url}
       loading="lazy"
       decoding="async"
-      onClick={onClick} // ✅ CLICK ICI
       className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
     />
 
@@ -712,7 +725,11 @@ function SortableItem({ capture, index, onClick }: any) {
 
     {/* GRID */}
 {tab === "photos" && (
-  <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <DndContext
+  sensors={sensors}
+  collisionDetection={closestCenter}
+  onDragEnd={handleDragEnd}
+>
     <SortableContext
   items={captures.map(c => c.id)}
       strategy={rectSortingStrategy}
@@ -737,7 +754,10 @@ function SortableItem({ capture, index, onClick }: any) {
             key={capture.id}
             capture={capture}
             index={index}
-            onClick={() => setSelectedIndex(index)}
+            onClick={() => {
+              const newIndex = captures.findIndex(c => c.id === capture.id)
+              setSelectedIndex(newIndex)
+            }}
           />
         ))}
 
