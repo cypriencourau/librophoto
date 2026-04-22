@@ -80,10 +80,10 @@ export default function BookPage() {
   const [uploadingPreview, setUploadingPreview] = useState<string[]>([])
   const sensors = useSensors(
   useSensor(PointerSensor, {
-    activationConstraint: {
-      delay: 150,
-      tolerance: 5,
-    },
+        activationConstraint: {
+          delay: 220,
+          tolerance: 8,
+        },
   })
 )
 
