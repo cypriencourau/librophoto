@@ -31,56 +31,25 @@ export default function BooksPage() {
     fetchOCRStats()
   },[])
 
-  async function fetchBooks(){
+  async function fetchBooks() {
+  try {
+    setLoading(true)
 
-    try{
+    const { data, error } = await supabase
+      .from("books")
+      .select("id, title, description, created_at, cover")
+      .order("created_at", { ascending: false })
 
-      setLoading(true)
+    if (error) throw error
 
-      const {data,error} = await supabase
-        .from("books")
-        .select(`
-          *,
-          captures (
-            id,
-            image_url,
-            created_at
-          )
-        `)
-        .order("created_at",{ascending:false})
+    setBooks(data || [])
 
-      if(error) throw error
-
-      const booksWithCover = (data || []).map((book:any) => {
-
-        const sortedCaptures = (book.captures || [])
-          .sort((a:any, b:any) => {
-
-            const dateDiff =
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime()
-
-            if (dateDiff !== 0) return dateDiff
-
-            // fallback si même timestamp
-            return a.id.localeCompare(b.id)
-          })
-
-        return {
-          ...book,
-          cover: book.cover || sortedCaptures[0]?.image_url || null
-        }
-      })
-
-      setBooks(booksWithCover)
-
-    }catch(err){
-      console.error(err)
-    }finally{
-      setLoading(false)
-    }
-
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
   }
+}
 
   async function fetchOCRStats(){
 
