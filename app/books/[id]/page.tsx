@@ -59,7 +59,7 @@ export default function BookPage() {
   const [tagsInput,setTagsInput] = useState("")
   const [tab,setTab] = useState("photos")
   const [search,setSearch] = useState("")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+
 
   const [ocrWords, setOcrWords] = useState<OCRWord[]>([])
   const [extracting, setExtracting] = useState(false)
@@ -429,11 +429,6 @@ const fileArray = Array.from(files)
 }
 
 
-  const sortedCaptures = [...captures].sort((a, b) => {
-  return sortOrder === "asc"
-    ? (a.position ?? 0) - (b.position ?? 0)
-    : (b.position ?? 0) - (a.position ?? 0)
-})
 
 async function handleDragEnd(event: any) {
   const { active, over } = event
@@ -706,23 +701,12 @@ function SortableItem({ capture, index, onClick }: any) {
 
       )}
 
-    {/* SORT BUTTON */}
-    <div className="px-4 max-w-6xl mx-auto mb-3 flex justify-end">
-      <button
-        onClick={() =>
-          setSortOrder(prev => (prev === "asc" ? "desc" : "asc"))
-        }
-        className="w-9 h-9 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 transition text-sm"
-      >
-        {sortOrder === "asc" ? "↑" : "↓"}
-      </button>
-    </div>
 
     {/* GRID */}
 {tab === "photos" && (
   <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
     <SortableContext
-  items={sortedCaptures.map(c => c.id)}
+  items={captures.map(c => c.id)}
       strategy={rectSortingStrategy}
     >
       <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
@@ -740,7 +724,7 @@ function SortableItem({ capture, index, onClick }: any) {
           </div>
         ))}
 
-        {sortedCaptures.map((capture, index) => (
+        {captures.map((capture, index) => (
           <SortableItem
             key={capture.id}
             capture={capture}
