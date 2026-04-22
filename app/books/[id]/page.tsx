@@ -518,22 +518,30 @@ function SortableItem({ capture, index, onClick }: any) {
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => {
-      if ((e as any).movementX !== 0 || (e as any).movementY !== 0) return
-      onClick()
-    }}
-      className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
-    >
-      <img
-        src={capture.image_url}
-        loading="lazy"
-        decoding="async"
-        className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
-      />
+  ref={setNodeRef}
+  style={style}
+  className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
+>
+
+  {/* 🔥 ZONE DRAG (en haut) */}
+  <div
+    {...attributes}
+    {...listeners}
+    className="absolute top-0 left-0 w-full h-6 z-10 cursor-grab"
+  />
+
+  {/* 🔥 ZONE CLICK */}
+  <div
+    onClick={onClick}
+    className="w-full h-full"
+  ></div>
+    <img
+      src={capture.image_url}
+      loading="lazy"
+      decoding="async"
+      onClick={onClick} // ✅ CLICK ICI
+      className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
+    />
 
       {/* overlay hover */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
