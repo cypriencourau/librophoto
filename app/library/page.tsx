@@ -65,11 +65,16 @@ async function loadPearls(){
 
 setLoading(true)
 
+const isFiltering =
+  search !== "" ||
+  activeTheme !== null ||
+  activeTags.length > 0
+
 let query = supabase
 .from("pearls")
 .select("id,content,source,theme,tags,created_at")
 .order("created_at",{ascending:false})
-.limit(80)
+.limit(isFiltering ? 80 : 20)
 
 if(activeTheme){
 query = query.eq("theme",activeTheme)
