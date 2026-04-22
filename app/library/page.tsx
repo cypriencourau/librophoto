@@ -426,6 +426,18 @@ className="group flex flex-col justify-between min-h-170px bg-neutral-900 border
 <p className="text-[15px] leading-relaxed line-clamp-5 whitespace-pre-wrap mb-5 text-neutral-100">
 {p.content}
 </p>
+{p.tags && (
+  <div className="flex flex-wrap gap-1.5 mb-3">
+    {p.tags.split(" ").map((t, i) => (
+      <span
+        key={i}
+        className="text-[10px] text-neutral-500"
+      >
+        #{t}
+      </span>
+    ))}
+  </div>
+)}
 
 
 {/* META */}
