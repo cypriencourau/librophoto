@@ -81,7 +81,8 @@ export default function BookPage() {
   const sensors = useSensors(
   useSensor(PointerSensor, {
     activationConstraint: {
-      distance: 8,
+      delay: 150,
+      tolerance: 5,
     },
   })
 )
@@ -558,7 +559,7 @@ function SortableItem({ capture, index, onClick }: any) {
   <div
     {...attributes}
     {...listeners}
-    className="absolute inset-0 z-10 cursor-grab touch-none"
+    className="absolute inset-0 z-10 cursor-grab"
   />
 
   {/* 🔥 ZONE CLICK */}
@@ -746,7 +747,7 @@ function SortableItem({ capture, index, onClick }: any) {
   items={captures.map(c => c.id)}
       strategy={rectSortingStrategy}
     >
-      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto touch-none">
+      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
 
         {uploadingPreview.map((url, i) => (
           <div
