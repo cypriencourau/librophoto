@@ -114,7 +114,7 @@ export default function BookPage() {
         .from("captures")
         .select("*")
         .eq("book_id", bookId)
-        .order("position", { ascending: sortOrder === "asc" })
+        .order("position", { ascending: true })
 
         if (bookData) setBook(bookData)
       setCaptures(captureData ?? [])
@@ -440,18 +440,20 @@ async function handleDragEnd(event: any) {
 
   if (!over || active.id === over.id) return
 
-  // ⚠️ TOUJOURS travailler en ordre ASC (base réelle)
-  const base = [...captures].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+  // ✅ base réelle = toujours ASC
+  const base = [...captures].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0)
+  )
 
   const oldIndex = base.findIndex(c => c.id === active.id)
   const newIndex = base.findIndex(c => c.id === over.id)
 
   const newOrder = arrayMove(base, oldIndex, newIndex)
 
-  // update UI
+  // ✅ update UI propre (ordre réel)
   setCaptures(newOrder)
 
-  // sauvegarde DB propre
+  // ✅ save DB
   const updates = newOrder.map((c, index) => {
     return supabase
       .from("captures")
