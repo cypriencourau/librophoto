@@ -327,6 +327,11 @@ const fileArray = Array.from(files)
     const previews = fileArray.map(file => URL.createObjectURL(file))
     setUploadingPreview(previews)
 
+    let currentMinPosition =
+    captures.length > 0
+      ? Math.min(...captures.map(c => c.position ?? 0))
+      : 0
+
       for (const file of fileArray) {
         try {
           const compressedFile = await imageCompression(file, {
@@ -367,7 +372,8 @@ const fileArray = Array.from(files)
             ? Math.min(...captures.map(c => c.position ?? 0))
             : 0
 
-        const newPosition = minPosition - 1
+          currentMinPosition = currentMinPosition - 1
+          const newPosition = currentMinPosition
 
           const { data: newCapture, error: insertError } = await supabase
             .from("captures")
