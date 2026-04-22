@@ -440,15 +440,18 @@ async function handleDragEnd(event: any) {
 
   if (!over || active.id === over.id) return
 
-  const oldIndex = sortedCaptures.findIndex(c => c.id === active.id)
-  const newIndex = sortedCaptures.findIndex(c => c.id === over.id)
+  // ⚠️ TOUJOURS travailler en ordre ASC (base réelle)
+  const base = [...captures].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
 
-  const newOrder = arrayMove(sortedCaptures, oldIndex, newIndex)
+  const oldIndex = base.findIndex(c => c.id === active.id)
+  const newIndex = base.findIndex(c => c.id === over.id)
 
-  // update UI direct
+  const newOrder = arrayMove(base, oldIndex, newIndex)
+
+  // update UI
   setCaptures(newOrder)
 
-  // 🔥 sauvegarde PROPRE en base (attendue)
+  // sauvegarde DB propre
   const updates = newOrder.map((c, index) => {
     return supabase
       .from("captures")
@@ -522,7 +525,10 @@ function SortableItem({ capture, index, onClick }: any) {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={onClick}
+      onClick={(e) => {
+      if ((e as any).movementX !== 0 || (e as any).movementY !== 0) return
+      onClick()
+    }}
       className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
     >
       <img
