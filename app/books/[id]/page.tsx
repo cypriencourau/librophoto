@@ -947,11 +947,13 @@ function SortableItem({ capture, index, onClick }: any) {
         {fullText !== "" && (
           <>
           <div className="space-y-5 mt-4"></div>
-            <textarea
-              value={fullText}
-              onChange={(e) => setFullText(e.target.value)}
-              className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-white whitespace-pre-wrap break-words overflow-x-hidden"
-            />
+            <div
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(e) => setFullText(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: fullText }}
+            className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg focus:outline-none whitespace-pre-wrap overflow-y-auto"
+          />
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
 
         <button
