@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 import { Trash2, X } from "lucide-react"
@@ -62,6 +62,11 @@ export default function BookPage() {
   const [tagsInput,setTagsInput] = useState("")
   const [tab,setTab] = useState("photos")
   const [search,setSearch] = useState("")
+  const filteredPearls = useMemo(() => {
+  return pearls.filter(p =>
+    p.content.toLowerCase().includes(search.toLowerCase())
+  )
+}, [pearls, search])
 
 
   const [ocrWords, setOcrWords] = useState<OCRWord[]>([])
@@ -123,7 +128,7 @@ export default function BookPage() {
 
       const { data: captureData } = await supabase
         .from("captures")
-        .select("*")
+        .select("id, image_url, created_at, scanned, position")
         .eq("book_id", bookId)
         .order("position", { ascending: true })
 
@@ -715,11 +720,7 @@ function SortableItem({ capture, index, onClick }: any) {
 
       <div className="space-y-4">
 
-      {pearls
-        .filter(p => 
-          p.content.toLowerCase().includes(search.toLowerCase())
-        )
-        .map(p => (
+      {filteredPearls.map(p => (
 
       <div
       key={p.id}
@@ -773,7 +774,7 @@ function SortableItem({ capture, index, onClick }: any) {
           </div>
         ))}
 
-        {captures.map((capture, index) => (
+        {captures.slice(0, 30).map((capture, index) => (
           <SortableItem
             key={capture.id}
             capture={capture}
