@@ -315,9 +315,9 @@ const fileArray = Array.from(files)
   .map((file, index) => ({ file, index }))
   .sort((a, b) => {
     if (a.file.lastModified === b.file.lastModified) {
-      return a.index - b.index // garde l'ordre sélectionné
+      return b.index - a.index
     }
-    return a.file.lastModified - b.file.lastModified
+    return b.file.lastModified - a.file.lastModified
   })
   .map(obj => obj.file)
 
@@ -362,14 +362,19 @@ const fileArray = Array.from(files)
             .from("captures")
             .getPublicUrl(fileName)
 
-          const maxPosition = captures.length
+          const minPosition =
+          captures.length > 0
+            ? Math.min(...captures.map(c => c.position ?? 0))
+            : 0
+
+        const newPosition = minPosition - 1
 
           const { data: newCapture, error: insertError } = await supabase
             .from("captures")
             .insert({
               book_id: bookId,
               image_url: data.publicUrl,
-              position: maxPosition + 1
+              position: newPosition
             })
             .select()
             .single()
