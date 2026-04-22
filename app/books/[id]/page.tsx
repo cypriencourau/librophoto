@@ -533,31 +533,33 @@ function SortableItem({ capture, index, onClick }: any) {
         startPos.current = { x: e.clientX, y: e.clientY }
       }}
 
-      onPointerUp={(e) => {
-      if (!startPos.current) return
+     onPointerUp={(e) => {
+    if (!startPos.current) return
 
-      const dx = Math.abs(e.clientX - startPos.current.x)
-      const dy = Math.abs(e.clientY - startPos.current.y)
+    const dx = Math.abs(e.clientX - startPos.current.x)
+    const dy = Math.abs(e.clientY - startPos.current.y)
 
-      const moved = dx > 6 || dy > 6
+    const moved = dx > 6 || dy > 6
 
-      if (!moved) {
-        onClick()
-      }
-    }}
+    if (!moved) {
+      onClick()
+    }
+
+    startPos.current = null
+  }}
+    
       className={`group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer
   ${isDragging ? "opacity-50 scale-95" : ""}
 `}
     >
+      
 
   {/* 🔥 ZONE DRAG (en haut) */}
-    <div
-      {...attributes}
-      {...listeners}
-       
-  onPointerDown={(e) => e.stopPropagation()}    // sécurité
-      className="absolute inset-0 z-10 cursor-grab touch-none"
-    />
+  <div
+    {...attributes}
+    {...listeners}
+    className="absolute inset-0 z-10 cursor-grab touch-none"
+  />
 
   {/* 🔥 ZONE CLICK */}
     <img
