@@ -435,25 +435,28 @@ const fileArray = Array.from(files)
     : (b.position ?? 0) - (a.position ?? 0)
 })
 
-function handleDragEnd(event: any) {
+async function handleDragEnd(event: any) {
   const { active, over } = event
 
   if (!over || active.id === over.id) return
 
-const oldIndex = sortedCaptures.findIndex(c => c.id === active.id)
-const newIndex = sortedCaptures.findIndex(c => c.id === over.id)
+  const oldIndex = sortedCaptures.findIndex(c => c.id === active.id)
+  const newIndex = sortedCaptures.findIndex(c => c.id === over.id)
 
-const newOrder = arrayMove(sortedCaptures, oldIndex, newIndex)
+  const newOrder = arrayMove(sortedCaptures, oldIndex, newIndex)
 
+  // update UI direct
   setCaptures(newOrder)
 
-  // 🔥 sauvegarde en base
-  newOrder.forEach((c, index) => {
-    supabase
+  // 🔥 sauvegarde PROPRE en base (attendue)
+  const updates = newOrder.map((c, index) => {
+    return supabase
       .from("captures")
       .update({ position: index + 1 })
       .eq("id", c.id)
   })
+
+  await Promise.all(updates)
 }
 
 // ================= NAVIGATION =================
