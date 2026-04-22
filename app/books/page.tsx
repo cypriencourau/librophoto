@@ -37,12 +37,42 @@ export default function BooksPage() {
 
     const { data, error } = await supabase
       .from("books")
-      .select("id, title, description, created_at, cover")
+      .select(`
+            id,
+            title,
+            description,
+            created_at,
+            cover,
+            captures (
+              image_url,
+              created_at
+            )
+          `)
       .order("created_at", { ascending: false })
 
     if (error) throw error
 
-    setBooks(data || [])
+   const booksWithCover = (data || []).map((book: any) => {
+
+        let fallback = null
+
+        if (!book.cover && book.captures?.length > 0) {
+          const oldest = book.captures.sort(
+            (a: any, b: any) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+          )[0]
+
+          fallback = oldest?.image_url || null
+        }
+
+        return {
+          ...book,
+          cover: book.cover || fallback
+        }
+      })
+
+      setBooks(booksWithCover)
 
   } catch (err) {
     console.error(err)
