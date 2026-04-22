@@ -5,12 +5,26 @@ import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 import { Trash2, X } from "lucide-react"
 import imageCompression from "browser-image-compression"
+import { useSortable } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+import {
+  DndContext,
+  closestCenter
+} from "@dnd-kit/core"
+
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy
+} from "@dnd-kit/sortable"
 
 type Capture = {
   id: string
   image_url: string
   created_at: string
   scanned?: boolean
+  position?: number // ✅ AJOUT ICI
 }
 
 type Book = {
@@ -100,7 +114,7 @@ export default function BookPage() {
         .from("captures")
         .select("*")
         .eq("book_id", bookId)
-        .order("created_at", { ascending: false })
+        .order("position", { ascending: sortOrder === "asc" })
 
         if (bookData) setBook(bookData)
       setCaptures(captureData ?? [])
@@ -118,7 +132,7 @@ export default function BookPage() {
     }
 
     fetchData()
-}, [bookId, sortOrder])
+}, [bookId])
 
   useEffect(() => {
     if (selectedIndex !== null) {
@@ -337,11 +351,14 @@ const fileArray = Array.from(files)
             .from("captures")
             .getPublicUrl(fileName)
 
+          const maxPosition = captures.length
+
           const { data: newCapture, error: insertError } = await supabase
             .from("captures")
             .insert({
               book_id: bookId,
-              image_url: data.publicUrl
+              image_url: data.publicUrl,
+              position: maxPosition + 1
             })
             .select()
             .single()
@@ -411,6 +428,34 @@ const fileArray = Array.from(files)
   }
 }
 
+
+  const sortedCaptures = [...captures].sort((a, b) => {
+  return sortOrder === "asc"
+    ? (a.position ?? 0) - (b.position ?? 0)
+    : (b.position ?? 0) - (a.position ?? 0)
+})
+
+function handleDragEnd(event: any) {
+  const { active, over } = event
+
+  if (!over || active.id === over.id) return
+
+const oldIndex = sortedCaptures.findIndex(c => c.id === active.id)
+const newIndex = sortedCaptures.findIndex(c => c.id === over.id)
+
+const newOrder = arrayMove(sortedCaptures, oldIndex, newIndex)
+
+  setCaptures(newOrder)
+
+  // 🔥 sauvegarde en base
+  newOrder.forEach((c, index) => {
+    supabase
+      .from("captures")
+      .update({ position: index + 1 })
+      .eq("id", c.id)
+  })
+}
+
 // ================= NAVIGATION =================
 
   function closeModal() {
@@ -447,14 +492,65 @@ const fileArray = Array.from(files)
   }
 
   function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const delta = e.changedTouches[0].clientX - touchStartX.current
-    if (delta > 50) prevImage()
-    if (delta < -50) nextImage()
-    touchStartX.current = null
+  if (touchStartX.current === null) return
+  const delta = e.changedTouches[0].clientX - touchStartX.current
+  if (delta > 50) prevImage()
+  if (delta < -50) nextImage()
+  touchStartX.current = null
+}
+
+function SortableItem({ capture, index, onClick }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition
+  } = useSortable({ id: capture.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition
   }
 
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
+    >
+      <img
+        src={capture.image_url}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
+      />
+
+      {/* overlay hover */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
+
+      {/* petit label */}
+      <div className="absolute bottom-2 right-2 text-xs bg-black/60 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
+        View
+      </div>
+
+      {/* ✅ coche verte conservée */}
+      {capture.scanned && (
+        <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
+          ✓
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+
   // ================= RENDER =================
+
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
@@ -613,51 +709,38 @@ const fileArray = Array.from(files)
 
     {/* GRID */}
 {tab === "photos" && (
-  <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
+  <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <SortableContext
+  items={sortedCaptures.map(c => c.id)}
+      strategy={rectSortingStrategy}
+    >
+      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
 
-    {uploadingPreview.map((url, i) => (
-      <div
-        key={i}
-        className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
-      >
-        <img
-          src={url}
-          className="w-full h-full object-cover opacity-70"
-          alt=""
-        />
-      </div>
-    ))}
-
-    {captures.map((capture, index) => (
-      <div
-        key={capture.id}
-        onClick={() => setSelectedIndex(index)}
-       className="group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer"
-      >
-      <img
-          src={capture.image_url}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
-        />
-
-         {/* overlay hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
-
-        {/* petit label */}
-        <div className="absolute bottom-2 right-2 text-xs bg-black/60 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
-          View
-        </div>
-
-        {capture.scanned && (
-          <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur text-white text-xs px-2 py-1 rounded-full shadow">
-            ✓
+        {uploadingPreview.map((url, i) => (
+          <div
+            key={i}
+            className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
+          >
+            <img
+              src={url}
+              className="w-full h-full object-cover opacity-70"
+              alt=""
+            />
           </div>
-        )}
-      </div>
-    ))}
+        ))}
 
-  </div>
+        {sortedCaptures.map((capture, index) => (
+          <SortableItem
+            key={capture.id}
+            capture={capture}
+            index={index}
+            onClick={() => setSelectedIndex(index)}
+          />
+        ))}
+
+      </div>
+    </SortableContext>
+  </DndContext>
 )}
 
       {/* MODAL */}
