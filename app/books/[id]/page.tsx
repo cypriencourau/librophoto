@@ -392,7 +392,7 @@ const fileArray = Array.from(files)
 
         if (newCapture) {
           setCaptures(prev => {
-            const updated = [...prev, newCapture]
+            const updated = [newCapture, ...prev]
 
             if (prev.length === 0) {
               supabase
