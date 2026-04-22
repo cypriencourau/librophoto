@@ -737,6 +737,7 @@ function SortableItem({ capture, index, onClick }: any) {
       {p.content}
       </p>
 
+      
       </div>
 
       ))}
