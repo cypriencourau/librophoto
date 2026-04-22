@@ -445,15 +445,10 @@ async function handleDragEnd(event: any) {
 
   if (!over || active.id === over.id) return
 
-  // ✅ base réelle = toujours ASC
-  const base = [...captures].sort(
-    (a, b) => (a.position ?? 0) - (b.position ?? 0)
-  )
+const oldIndex = captures.findIndex(c => c.id === active.id)
+const newIndex = captures.findIndex(c => c.id === over.id)
 
-  const oldIndex = base.findIndex(c => c.id === active.id)
-  const newIndex = base.findIndex(c => c.id === over.id)
-
-  const newOrder = arrayMove(base, oldIndex, newIndex)
+const newOrder = arrayMove(captures, oldIndex, newIndex)
 
   // ✅ update UI propre (ordre réel)
   setCaptures(newOrder)
@@ -545,7 +540,7 @@ const {
       {...listeners}
        
   onClick={(e) => e.stopPropagation()}       // sécurité
-      className="absolute top-0 left-0 w-full h-6 z-10 cursor-grab"
+      className="absolute inset-0 z-10 cursor-grab touch-none"
     />
 
   {/* 🔥 ZONE CLICK */}
@@ -734,7 +729,7 @@ const {
   items={captures.map(c => c.id)}
       strategy={rectSortingStrategy}
     >
-      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
+      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto touch-none">
 
         {uploadingPreview.map((url, i) => (
           <div
