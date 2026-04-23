@@ -325,21 +325,35 @@ className="w-full px-3 py-2 rounded-md bg-neutral-900 border border-neutral-800 
 
 {/* CONTENT */}
 
-<textarea
-ref={textareaRef}
-value={content}
-onChange={(e)=>setContent(e.target.value)}
-placeholder="Écrire la citation ou l'anecdote…"
-className="
-w-full
-text-lg
-leading-loose
-bg-transparent
-resize-none
-outline-none
-overflow-hidden
-placeholder:text-neutral-600
-"
+<div className="flex gap-2 mb-3">
+
+  <button
+    onMouseDown={(e) => {
+      e.preventDefault()
+      document.execCommand("hiliteColor", false, "#fde047")
+    }}
+    className="px-2 py-1 text-sm bg-yellow-300 text-black rounded"
+  >
+    🟡
+  </button>
+
+</div>
+
+<div
+  contentEditable
+  suppressContentEditableWarning
+  onInput={(e) => setContent(e.currentTarget.innerHTML)}
+  dangerouslySetInnerHTML={{ __html: content }}
+  className="
+    w-full
+    text-[15px]
+    leading-relaxed
+    bg-transparent
+    outline-none
+    min-h-[200px]
+    whitespace-pre-wrap
+    text-neutral-100
+  "
 />
 
 

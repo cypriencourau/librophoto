@@ -424,7 +424,10 @@ className="group flex flex-col justify-between min-h-170px bg-neutral-900 border
 {/* citation */}
 
 <p className="text-[15px] leading-relaxed line-clamp-5 whitespace-pre-wrap mb-5 text-neutral-100">
-{p.content}
+<div
+  className="text-[15px] leading-relaxed line-clamp-5 whitespace-pre-wrap mb-5 text-neutral-100 [&_*]:inline"
+  dangerouslySetInnerHTML={{ __html: p.content }}
+/>
 </p>
 
 {/* META */}
