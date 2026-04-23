@@ -22,8 +22,8 @@ const [tags,setTags] = useState<string[]>([])
 const [tagInput,setTagInput] = useState("")
 const [link,setLink] = useState("")
 
-const textareaRef = useRef<HTMLTextAreaElement>(null)
 const loadedRef = useRef(false)
+const lastSavedRef = useRef("")
 
 
 
@@ -58,6 +58,9 @@ setTags(data.tags.split(" ").filter((t:string)=>t))
 
 setLoading(false)
 
+loadedRef.current = true
+lastSavedRef.current = data.content || ""
+
 }
 
 
@@ -83,6 +86,8 @@ return ()=>clearTimeout(timeout)
 
 async function savePearl(){
 
+if(content === lastSavedRef.current) return
+
 if(!id) return
 
 setSaving(true)
@@ -106,6 +111,7 @@ alert("Erreur sauvegarde")
 return
 }
 
+lastSavedRef.current = content
 
 }
 
@@ -126,20 +132,6 @@ await supabase
 router.push("/library")
 
 }
-
-
-
-/* AUTO RESIZE */
-
-useEffect(()=>{
-
-const el = textareaRef.current
-if(!el) return
-
-el.style.height = "auto"
-el.style.height = el.scrollHeight + "px"
-
-},[content])
 
 
 
@@ -190,7 +182,12 @@ return(
 <div className="flex items-center justify-between mb-10">
 
 <button
-onClick={()=>router.push("/library")}
+onClick={async ()=>{
+
+  await savePearl()   // 🔥 sauvegarde forcée
+
+  router.push("/library")
+}}
 className="flex items-center gap-2 text-sm text-neutral-500 hover:text-white"
 >
 <ArrowLeft size={16}/>
@@ -200,11 +197,13 @@ Bibliothèque
 
 <div className="flex items-center gap-3">
 
-{saving &&(
-<span className="text-xs text-neutral-500">
-Saving…
+<span className="text-xs">
+  {saving ? (
+    <span className="text-neutral-500">Saving…</span>
+  ) : (
+    <span className="text-green-400">✓ saved</span>
+  )}
 </span>
-)}
 
 <button
 onClick={savePearl}
