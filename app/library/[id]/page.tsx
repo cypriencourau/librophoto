@@ -24,6 +24,7 @@ const [link,setLink] = useState("")
 
 const loadedRef = useRef(false)
 const lastSavedRef = useRef("")
+const editorRef = useRef<HTMLDivElement>(null)
 
 
 
@@ -57,6 +58,12 @@ setTags(data.tags.split(" ").filter((t:string)=>t))
 }
 
 setLoading(false)
+
+setTimeout(() => {
+  if (editorRef.current) {
+    editorRef.current.innerHTML = data.content || ""
+  }
+}, 0)
 
 loadedRef.current = true
 lastSavedRef.current = data.content || ""
@@ -375,10 +382,10 @@ className="w-full px-3 py-2 rounded-md bg-neutral-900 border border-neutral-800 
 </div>
 
 <div
+  ref={editorRef}
   contentEditable
   suppressContentEditableWarning
   onInput={(e) => setContent(e.currentTarget.innerHTML)}
-  dangerouslySetInnerHTML={{ __html: content }}
   className="
     w-full
     text-[15px]
