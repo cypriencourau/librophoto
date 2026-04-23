@@ -325,16 +325,52 @@ className="w-full px-3 py-2 rounded-md bg-neutral-900 border border-neutral-800 
 
 {/* CONTENT */}
 
-<div className="flex gap-2 mb-3">
+{/* TOOLBAR */}
+
+<div className="flex items-center gap-1 mb-4 px-2 py-1.5 bg-neutral-900/60 border border-neutral-800 rounded-lg w-fit">
 
   <button
-    onMouseDown={(e) => {
-      e.preventDefault()
-      document.execCommand("hiliteColor", false, "#fde047")
-    }}
-    className="px-2 py-1 text-sm bg-yellow-300 text-black rounded"
+    onMouseDown={(e)=>{e.preventDefault(); document.execCommand("bold")}}
+    className="px-2 py-1 text-sm rounded hover:bg-neutral-700"
   >
-    🟡
+    B
+  </button>
+
+  <button
+    onMouseDown={(e)=>{e.preventDefault(); document.execCommand("italic")}}
+    className="px-2 py-1 text-sm rounded hover:bg-neutral-700 italic"
+  >
+    I
+  </button>
+
+  <button
+    onMouseDown={(e)=>{e.preventDefault(); document.execCommand("underline")}}
+    className="px-2 py-1 text-sm rounded hover:bg-neutral-700 underline"
+  >
+    U
+  </button>
+
+  <div className="w-px h-4 bg-neutral-700 mx-1" />
+
+  <button
+    onMouseDown={(e)=>{
+      e.preventDefault()
+
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0) return
+
+      const parent = selection.anchorNode?.parentElement
+
+      // toggle highlight
+      if (parent && parent.style.backgroundColor) {
+        document.execCommand("hiliteColor", false, "transparent")
+      } else {
+        document.execCommand("hiliteColor", false, "#fef08a")
+      }
+    }}
+    className="px-2 py-1 text-sm rounded hover:bg-neutral-700"
+  >
+    <span className="bg-yellow-200 text-black px-1 rounded">A</span>
   </button>
 
 </div>
@@ -353,6 +389,7 @@ className="w-full px-3 py-2 rounded-md bg-neutral-900 border border-neutral-800 
     min-h-[200px]
     whitespace-pre-wrap
     text-neutral-100
+    [&_span[style*='background-color']]:text-black
   "
 />
 
