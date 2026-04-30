@@ -166,12 +166,15 @@ export default function BookPage() {
     }
   }, [selectedIndex])
 
-  // ✅ Synchronisation propre du contentEditable
-  useEffect(() => {
-    if (textEditorRef.current) {
-      textEditorRef.current.innerHTML = fullText || ""
-    }
-  }, [selectedIndex])
+    useEffect(() => {
+      if (
+        textEditorRef.current &&
+        fullText &&
+        textEditorRef.current.innerHTML === ""
+      ) {
+        textEditorRef.current.innerHTML = fullText
+      }
+    }, [fullText])
  
   // ================= OCR =================
 
@@ -187,9 +190,17 @@ export default function BookPage() {
         body: JSON.stringify({ imageUrl }),
       })
 
-      const result = await response.json()
+      if (!response.ok) {
+      console.error("Erreur API OCR", response.status)
+      setToast("Erreur OCR serveur")
+      return
+    }
+
+    const result = await response.json()
+    console.log("OCR RESULT:", result)
 
       const words: OCRWord[] = result.words ?? []
+      console.log("WORDS:", words)
 
    // 1️⃣ Trier selon la vraie structure OCR
 words.sort((a, b) => {
@@ -973,19 +984,15 @@ function SortableItem({ capture, index, onClick }: any) {
 
         {fullText !== "" && (
           <>
-          <div className="space-y-5 mt-4"></div>
-            <div
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => {
-            const html = e.currentTarget.innerHTML
-
-            if (html !== fullText) {
-              setFullText(html)
-            }
+        <div
+          ref={textEditorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => {
+            setFullText(e.currentTarget.innerHTML)
           }}
-            className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg focus:outline-none whitespace-pre-wrap overflow-y-auto"
-          />
+          className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg focus:outline-none whitespace-pre-wrap overflow-y-auto"
+        />
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
 
         <button
