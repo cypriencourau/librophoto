@@ -80,6 +80,7 @@ export default function BookPage() {
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const touchStartX = useRef<number | null>(null)
+  const textEditorRef = useRef<HTMLDivElement | null>(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState<string[]>([])
@@ -101,7 +102,7 @@ export default function BookPage() {
 
   const {data,error} = await supabase
     .from("pearls")
-    .select("id,content,page")
+    .select("id,content,page,tags")
     .eq("book_id",bookId)
     .order("page",{ascending:true, nullsFirst:true})
 
@@ -162,6 +163,13 @@ export default function BookPage() {
     return () => {
       document.body.style.overflow = "auto"
       document.body.classList.remove("hide-nav")
+    }
+  }, [selectedIndex])
+
+  // ✅ Synchronisation propre du contentEditable
+  useEffect(() => {
+    if (textEditorRef.current) {
+      textEditorRef.current.innerHTML = fullText || ""
     }
   }, [selectedIndex])
  
@@ -733,9 +741,26 @@ function SortableItem({ capture, index, onClick }: any) {
       </div>
       )}
 
-      <p className="text-[15px] leading-7 whitespace-pre-wrap">
-      {p.content}
-      </p>
+      <p
+        className="text-[15px] leading-7 whitespace-pre-wrap [&_span[style*='background-color']]:text-black"
+        dangerouslySetInnerHTML={{ __html: p.content }}
+      />
+
+    {p.tags && (
+      <div className="text-xs mt-3 flex flex-wrap gap-2">
+        {p.tags
+          .split(" ")
+          .filter((tag: string) => tag.trim() !== "")
+          .map((tag: string, i: number) => (
+            <span
+              key={i}
+              className="px-2 py-0.5 bg-neutral-800 text-neutral-400 rounded"
+            >
+              #{tag}
+            </span>
+          ))}
+      </div>
+    )}
 
       
       </div>
@@ -952,8 +977,13 @@ function SortableItem({ capture, index, onClick }: any) {
             <div
             contentEditable
             suppressContentEditableWarning
-            onInput={(e) => setFullText(e.currentTarget.innerHTML)}
-            dangerouslySetInnerHTML={{ __html: fullText }}
+            onInput={(e) => {
+            const html = e.currentTarget.innerHTML
+
+            if (html !== fullText) {
+              setFullText(html)
+            }
+          }}
             className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg focus:outline-none whitespace-pre-wrap overflow-y-auto"
           />
             <div className="flex flex-col sm:flex-row gap-3 pt-2">

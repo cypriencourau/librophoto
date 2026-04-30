@@ -166,11 +166,10 @@ key={pearl.id}
 className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 hover:border-neutral-600 transition"
 >
 
-<p className="text-sm leading-relaxed mb-3 line-clamp-4">
-
-{pearl.content}
-
-</p>
+<p
+  className="text-sm leading-relaxed mb-3 line-clamp-4 [&_span[style*='background-color']]:text-black"
+  dangerouslySetInnerHTML={{ __html: pearl.content }}
+/>
 
 {pearl.source &&(
 
