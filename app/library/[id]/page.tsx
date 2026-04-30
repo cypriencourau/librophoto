@@ -28,6 +28,11 @@
   const loadedRef = useRef(false)
   const lastSavedRef = useRef<string>("")
   const editorRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+  if (editorRef.current && editorRef.current.innerHTML === "") {
+    editorRef.current.innerHTML = content
+  }
+}, [content])
   
   const { triggerSave, status } = useAutoSave(savePearl)
 
@@ -425,29 +430,31 @@ async function deletePearl() {
 
   </div>
 
-  <div
-    ref={editorRef}
-    contentEditable
-    suppressContentEditableWarning
-    onBlur={() => savePearl()}
-    dangerouslySetInnerHTML={{ __html: content }}
-      onInput={(e) => {
-        const html = e.currentTarget.innerHTML
-        setContent(html)
-        triggerSave()
-      }}
-    className="
-      w-full
-      text-[15px]
-      leading-relaxed
-      bg-transparent
-      outline-none
-      min-h-[200px]
-      whitespace-pre-wrap
-      text-neutral-100
-      [&_span[style*='background-color']]:text-neutral-900
-    "
-  />
+<div
+  ref={editorRef}
+  contentEditable
+  suppressContentEditableWarning
+  onBlur={() => savePearl()}
+  onInput={(e) => {
+    const html = e.currentTarget.innerHTML
+
+    if (html !== content) {
+      setContent(html)
+      triggerSave()
+    }
+  }}
+  className="
+    w-full
+    text-[15px]
+    leading-relaxed
+    bg-transparent
+    outline-none
+    min-h-[200px]
+    whitespace-pre-wrap
+    text-neutral-100
+    [&_span[style*='background-color']]:text-neutral-900
+  "
+/>
 
 
 
