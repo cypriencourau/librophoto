@@ -21,7 +21,10 @@ export async function POST(request: Request) {
     const imageArrayBuffer = await imageResponse.arrayBuffer()
 
     const [result] = await client.documentTextDetection({
-      image: { content: Buffer.from(imageArrayBuffer) }
+      image: { content: Buffer.from(imageArrayBuffer) },
+      imageContext: {
+        languageHints: ["fr"]
+      }
     })
 
     const annotation = result.fullTextAnnotation
@@ -35,8 +38,8 @@ export async function POST(request: Request) {
     const width = page.width || 1
     const height = page.height || 1
 
-    const minX = width * 0.15
-    const maxX = width * 0.85
+    const minX = width * 0.08
+    const maxX = width * 0.92
     const minY = height * 0.10
     const maxY = height * 0.90
 
@@ -66,16 +69,30 @@ export async function POST(request: Request) {
           if (y0 < minY || y0 > maxY) return
 
           let text = ""
-          word.symbols?.forEach(s => text += s.text)
+          let hasLineBreak = false
 
-          words.push({
-            text,
-            block: blockIndex,
-            paragraph: paragraphIndex,
-            line: paragraphIndex,
-            word: wordIndex,
-            bbox: { x0, y0, x1, y1 }
+          word.symbols?.forEach(s => {
+            text += s.text
+
+            const breakType = s.property?.detectedBreak?.type
+
+            if (breakType === "SPACE" || breakType === "SURE_SPACE") {
+              text += " "
+            }
+
+            if (breakType === "LINE_BREAK" || breakType === "EOL_SURE_SPACE") {
+              hasLineBreak = true
+            }
           })
+
+        words.push({
+          text,
+          block: blockIndex,
+          paragraph: paragraphIndex,
+          line: hasLineBreak ? wordIndex : 0,
+          word: wordIndex,
+          bbox: { x0, y0, x1, y1 }
+        })
 
           wordIndex++
         })
@@ -86,7 +103,46 @@ export async function POST(request: Request) {
       blockIndex++
     })
 
-    const reconstructed = words.map(w => w.text).join(" ")
+    let reconstructed = words.map(w => w.text).join("")
+
+      // ===== FIX mots coupés =====
+      reconstructed = reconstructed
+        .replace(/-\s*\n\s*/g, "")
+        .replace(/(\w+)-\s*(\w+)/g, "$1$2")
+
+      // ===== FIX ponctuation française =====
+      reconstructed = reconstructed
+        .replace(/\s*([:;!?»])/g, " $1")
+        .replace(/\s+([.,])/g, "$1")
+        .replace(/([:;!?])([^\s])/g, "$1 $2")
+
+      // ===== FIX guillemets =====
+      reconstructed = reconstructed
+        .replace(/«\s*/g, "« ")
+        .replace(/\s*»/g, " »")
+
+      // ===== FIX tiret cadratin =====
+      reconstructed = reconstructed
+        .replace(/ ?— ?/g, " — ")
+
+      // ===== CLEAN lignes =====
+      reconstructed = reconstructed
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/\n\s+/g, "\n")
+
+      // ===== REMOVE bruit (pages, *) =====
+      reconstructed = reconstructed
+        .replace(/^\*\s*$/gm, "")
+        .replace(/^\d+\s*$/gm, "")
+
+        // ===== FIX apostrophes =====
+      reconstructed = reconstructed
+        .replace(/(\w)\s+'/g, "$1'")
+
+      // ===== FINAL CLEAN =====
+      reconstructed = reconstructed
+        .replace(/\s{2,}/g, " ")
+        .trim()
 
     await supabase.from("ocr_usage").insert({})
 
