@@ -74,7 +74,7 @@ let query = supabase
 .from("pearls")
 .select("id,content,source,theme,tags,created_at")
 .order("created_at",{ascending:false})
-.limit(isFiltering ? 80 : 20)
+.limit(isFiltering ? 80 : 40)
 
 if(activeTheme){
 query = query.eq("theme",activeTheme)

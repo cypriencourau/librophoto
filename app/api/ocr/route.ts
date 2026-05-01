@@ -71,6 +71,8 @@ export async function POST(request: Request) {
 
           let text = ""
 
+const currentLine = lineIndex
+
           word.symbols?.forEach(s => {
             text += s.text
 
@@ -80,16 +82,19 @@ export async function POST(request: Request) {
               text += " "
             }
 
-            if (breakType === "LINE_BREAK" || breakType === "EOL_SURE_SPACE") {
-              lineIndex++
-            }
+          if (breakType === "LINE_BREAK" || breakType === "EOL_SURE_SPACE") {
+            // le prochain mot sera sur une nouvelle ligne
+            lineIndex++
+          }
           })
+
+          if (!text.trim()) return
 
                   words.push({
                     text,
                     block: blockIndex,
                     paragraph: paragraphIndex,
-                    line: lineIndex,
+                    line: currentLine,
                     word: wordIndex,
                     bbox: { x0, y0, x1, y1 }
                   })
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
                 blockIndex++
               })
 
-   let reconstructed = words.map(w => w.text).join(" ")
+   let reconstructed = words.map(w => w.text).join("")
 
       // ===== FIX mots coupés =====
       reconstructed = reconstructed
@@ -139,26 +144,9 @@ export async function POST(request: Request) {
       reconstructed = reconstructed
         .replace(/(\w)\s+'/g, "$1'")
 
-      // ===== FIX syllabes cassées (safe) =====
-      reconstructed = reconstructed.replace(
-        /\b([a-zàâçéèêëîïôûùüÿñæœ]{3,})\s+([a-zàâçéèêëîïôûùüÿñæœ]{3,})\b/gi,
-        (match, a, b) => {
-
-          // blacklist mots fréquents
-          const commonWords = ["les", "des", "une", "dans", "avec", "pour", "mais", "donc"]
-
-          if (commonWords.includes(a.toLowerCase())) return match
-
-          const merged = a + b
-
-          // fusion seulement si longueur crédible
-          if (merged.length >= 6 && merged.length <= 20) {
-            return merged
-          }
-
-          return match
-        }
-      )
+        reconstructed = reconstructed
+      .replace(/\s+\(/g, " (")
+      .replace(/\(\s+/g, "(")
 
       // ===== FINAL CLEAN =====
       reconstructed = reconstructed
