@@ -53,9 +53,10 @@ export async function POST(request: Request) {
 
       block.paragraphs?.forEach(paragraph => {
 
-        let wordIndex = 0
+      let wordIndex = 0
+      let lineIndex = 0
 
-        paragraph.words?.forEach(word => {
+      paragraph.words?.forEach(word => {
 
           const box = word.boundingBox?.vertices
           if (!box) return
@@ -69,7 +70,6 @@ export async function POST(request: Request) {
           if (y0 < minY || y0 > maxY) return
 
           let text = ""
-          let hasLineBreak = false
 
           word.symbols?.forEach(s => {
             text += s.text
@@ -81,29 +81,29 @@ export async function POST(request: Request) {
             }
 
             if (breakType === "LINE_BREAK" || breakType === "EOL_SURE_SPACE") {
-              hasLineBreak = true
+              lineIndex++
             }
           })
 
-        words.push({
-          text,
-          block: blockIndex,
-          paragraph: paragraphIndex,
-          line: hasLineBreak ? wordIndex : 0,
-          word: wordIndex,
-          bbox: { x0, y0, x1, y1 }
-        })
+                  words.push({
+                    text,
+                    block: blockIndex,
+                    paragraph: paragraphIndex,
+                    line: lineIndex,
+                    word: wordIndex,
+                    bbox: { x0, y0, x1, y1 }
+                  })
 
-          wordIndex++
-        })
+                    wordIndex++
+                  })
 
-        paragraphIndex++
-      })
+                  paragraphIndex++
+                })
 
-      blockIndex++
-    })
+                blockIndex++
+              })
 
-    let reconstructed = words.map(w => w.text).join("")
+   let reconstructed = words.map(w => w.text).join(" ")
 
       // ===== FIX mots coupés =====
       reconstructed = reconstructed
@@ -138,6 +138,27 @@ export async function POST(request: Request) {
         // ===== FIX apostrophes =====
       reconstructed = reconstructed
         .replace(/(\w)\s+'/g, "$1'")
+
+      // ===== FIX syllabes cassées (safe) =====
+      reconstructed = reconstructed.replace(
+        /\b([a-zàâçéèêëîïôûùüÿñæœ]{3,})\s+([a-zàâçéèêëîïôûùüÿñæœ]{3,})\b/gi,
+        (match, a, b) => {
+
+          // blacklist mots fréquents
+          const commonWords = ["les", "des", "une", "dans", "avec", "pour", "mais", "donc"]
+
+          if (commonWords.includes(a.toLowerCase())) return match
+
+          const merged = a + b
+
+          // fusion seulement si longueur crédible
+          if (merged.length >= 6 && merged.length <= 20) {
+            return merged
+          }
+
+          return match
+        }
+      )
 
       // ===== FINAL CLEAN =====
       reconstructed = reconstructed
