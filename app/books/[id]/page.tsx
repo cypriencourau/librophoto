@@ -27,7 +27,8 @@ type Capture = {
   image_url: string
   created_at: string
   scanned?: boolean
-  position?: number // ✅ AJOUT ICI
+   position?: number
+  ocr_text?: string
 }
 
 type Book = {
@@ -129,7 +130,7 @@ export default function BookPage() {
 
       const { data: captureData } = await supabase
         .from("captures")
-        .select("id, image_url, created_at, scanned, position")
+        .select("id, image_url, created_at, scanned, position, ocr_text")
         .eq("book_id", bookId)
         .order("position", { ascending: true })
 
@@ -247,16 +248,20 @@ reconstructed = reconstructed
   .replace(/ﬁ/g, "fi")
   .replace(/ﬂ/g, "fl")
 
-setFullText(reconstructed.trim())
+const text = reconstructed.trim()
+setFullText(text)
 
 if (selectedIndex !== null) {
   const id = captures[selectedIndex]?.id
   if (id) {
     // ✅ sauvegarde en base (persistant)
-    await supabase
-      .from("captures")
-      .update({ scanned: true })
-      .eq("id", id)
+      await supabase
+        .from("captures")
+        .update({
+          scanned: true,
+          ocr_text: text 
+        })
+        .eq("id", id)
 
     // ⚡ mise à jour immédiate UI
     setScannedIds(prev =>
@@ -264,11 +269,13 @@ if (selectedIndex !== null) {
     )
 
     // 🧠 garde captures sync (important pour refresh visuel)
-    setCaptures(prev =>
-      prev.map(c =>
-        c.id === id ? { ...c, scanned: true } : c
+      setCaptures(prev =>
+        prev.map(c =>
+          c.id === id
+            ? { ...c, scanned: true, ocr_text: text } // 🔥 IMPORTANT
+            : c
+        )
       )
-    )
   }
 }
 
@@ -947,12 +954,18 @@ function SortableItem({ capture, index, onClick }: any) {
         {fullText === "" && !extracting && (
           <div className="mt-6">
             <button
-              onClick={() =>
-                runOCR(captures[selectedIndex].image_url)
-              }
+              onClick={() => {
+                  const capture = captures[selectedIndex]
+
+                  if (capture?.ocr_text) {
+                    setFullText(capture.ocr_text)
+                  } else {
+                    runOCR(capture.image_url)
+                  }
+                }}
               className="w-full py-4 bg-white text-black rounded-xl text-sm font-medium"
             >
-              Scanner le texte
+              Extraire le texte
             </button>
           </div>
         )}
