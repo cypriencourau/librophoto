@@ -899,22 +899,22 @@ function SortableItem({ capture, index, onClick }: any) {
 
        {/* IMAGE */}
   <div className="h-full flex items-center justify-center">
-<div className="h-full flex items-center justify-center">
-  <img
-    ref={imageRef}
-    src={captures[selectedIndex!].image_url}
-    onLoad={() => setImageLoaded(true)}
-    className="
-      max-h-[40vh] md:max-h-[80vh]
-      w-full md:w-auto
-      w-auto
-      object-contain
-      rounded-xl
-      border border-white/15
-      shadow-[0_20px_50px_rgba(0,0,0,0.55)]
-    "
-  />
-</div>
+    <div className="h-full flex items-center justify-center">
+      <img
+        ref={imageRef}
+        src={captures[selectedIndex!].image_url}
+        onLoad={() => setImageLoaded(true)}
+        className="
+          max-h-[40vh] md:max-h-[80vh]
+          w-full md:w-auto
+          w-auto
+          object-contain
+          rounded-xl
+          border border-white/15
+          shadow-[0_20px_50px_rgba(0,0,0,0.55)]
+        "
+      />
+    </div>
   </div>
 
   {/* PANEL */}
@@ -945,23 +945,23 @@ function SortableItem({ capture, index, onClick }: any) {
 
         {/* ACTION */}
         {!captures[selectedIndex]?.ocr_text && !extracting && (
-<button
-  onClick={() => runOCR(captures[selectedIndex!].image_url)}
-  className="
-    flex items-center justify-center gap-2
-    px-4 py-2.5
-    text-sm font-semibold
-    text-white
-    bg-gradient-to-r from-neutral-800 to-neutral-700
-    rounded-xl
-    border border-white/10
-    hover:from-neutral-700 hover:to-neutral-600
-    active:scale-95
-    transition
-  "
->
-  ⚡ Extraire le texte
-</button>
+      <button
+        onClick={() => runOCR(captures[selectedIndex!].image_url)}
+        className="
+          flex items-center justify-center gap-2
+          px-4 py-2.5
+          text-sm font-semibold
+          text-white
+          bg-gradient-to-r from-neutral-800 to-neutral-700
+          rounded-xl
+          border border-white/10
+          hover:from-neutral-700 hover:to-neutral-600
+          active:scale-95
+          transition
+        "
+      >
+        ⚡ Extraire le texte
+      </button>
         )}
 
         {extracting && (
@@ -988,7 +988,7 @@ function SortableItem({ capture, index, onClick }: any) {
                 overflow-y-auto
                 bg-black/40
                 border border-white/10
-                text-[17px]
+                text-[16px]
                 leading-7
                 p-4
                 rounded-xl
