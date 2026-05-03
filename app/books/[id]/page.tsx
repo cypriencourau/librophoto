@@ -176,6 +176,20 @@ export default function BookPage() {
         textEditorRef.current.innerHTML = fullText
       }
     }, [fullText])
+
+    //si le texte a déjà été extrait on le garde 
+
+    useEffect(() => {
+  if (selectedIndex !== null) {
+    const capture = captures[selectedIndex]
+
+    if (capture?.ocr_text) {
+      setFullText(capture.ocr_text)
+    } else {
+      setFullText("")
+    }
+  }
+}, [selectedIndex])
  
   // ================= OCR =================
 
@@ -591,9 +605,11 @@ function SortableItem({ capture, index, onClick }: any) {
     startPos.current = null
   }}
     
-      className={`group relative aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden cursor-pointer
-  ${isDragging ? "opacity-50 scale-95" : ""}
-`}
+      className={`group relative aspect-3/4 rounded-2xl overflow-hidden cursor-pointer
+      bg-neutral-900 border border-neutral-800
+      hover:border-neutral-600 hover:-translate-y-1 transition-all duration-300
+      ${isDragging ? "opacity-50 scale-95" : ""}
+      `}
     >
       
 
@@ -605,20 +621,15 @@ function SortableItem({ capture, index, onClick }: any) {
   />
 
   {/* 🔥 ZONE CLICK */}
-    <img
-      src={capture.image_url}
-      loading="lazy"
-      decoding="async"
-      className="w-full h-full object-cover transition duration-300 group-hover:scale-105 group-hover:opacity-80"
-    />
+      <img
+        src={capture.image_url}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
+      />
 
       {/* overlay hover */}
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
-
-      {/* petit label */}
-      <div className="absolute bottom-2 right-2 text-xs bg-black/60 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
-        View
-      </div>
+     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition" />
 
       {/* ✅ coche verte conservée */}
       {capture.scanned && (
@@ -637,24 +648,25 @@ function SortableItem({ capture, index, onClick }: any) {
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
       {/* HEADER */}
+    <div className="sticky top-0 z-40 backdrop-blur bg-neutral-950/80 border-b border-neutral-800">
       <div className="flex items-center justify-between px-4 py-3 max-w-6xl mx-auto">
 
         <div className="flex items-center gap-3">
 
           <button
             onClick={() => router.back()}
-            className="text-2xl"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 transition"
           >
             ←
           </button>
 
           <div>
-            <h1 className="text-base sm:text-lg font-semibold">
+            <h1 className="text-sm sm:text-base font-semibold leading-tight">
               {book?.title}
             </h1>
 
-            <p className="text-xs text-neutral-500">
-              {pearls.length} passages • {captures.length} photos
+            <p className="text-[11px] text-neutral-500">
+              {captures.length} photos • {pearls.length} passages
             </p>
           </div>
 
@@ -662,12 +674,13 @@ function SortableItem({ capture, index, onClick }: any) {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-neutral-800 hover:bg-neutral-700"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 active:scale-95 transition"
         >
           📷
         </button>
 
       </div>
+    </div>
 
 
 
@@ -701,31 +714,33 @@ function SortableItem({ capture, index, onClick }: any) {
 
       {/* TABS */}
 
-      <div className="flex gap-2 px-4 pt-4 max-w-6xl mx-auto">
+      <div className="px-4 pt-4 max-w-6xl mx-auto">
+      <div className="inline-flex bg-neutral-900 border border-neutral-800 rounded-xl p-1">
 
         <button
-      onClick={()=>setTab("photos")}
-      className={`px-3 py-1.5 text-sm rounded-lg ${
-      tab==="photos"
-      ? "bg-white text-black"
-      : "bg-neutral-800 text-neutral-300"
-      }`}
-      >
-      Photos
-      </button>
+          onClick={()=>setTab("photos")}
+          className={`px-4 py-1.5 text-sm rounded-lg transition ${
+            tab==="photos"
+              ? "bg-white text-black shadow"
+              : "text-neutral-400"
+          }`}
+        >
+          Photos
+        </button>
 
-      <button
-      onClick={()=>setTab("pearls")}
-      className={`px-3 py-1.5 text-sm rounded-lg ${
-      tab==="pearls"
-      ? "bg-white text-black"
-      : "bg-neutral-800 text-neutral-300"
-      }`}
-      >
-      Perles
-      </button>
+        <button
+          onClick={()=>setTab("pearls")}
+          className={`px-4 py-1.5 text-sm rounded-lg transition ${
+            tab==="pearls"
+              ? "bg-white text-black shadow"
+              : "text-neutral-400"
+          }`}
+        >
+          Perles
+        </button>
 
-            </div>
+      </div>
+    </div>
 
       {/* PASSAGES DU LIVRE */}
 
@@ -951,7 +966,7 @@ function SortableItem({ capture, index, onClick }: any) {
         </h3>
 
         <div className="space-y-6">
-        {fullText === "" && !extracting && (
+        {!captures[selectedIndex]?.ocr_text && !extracting && (
           <div className="mt-6">
             <button
               onClick={() => {
@@ -972,7 +987,7 @@ function SortableItem({ capture, index, onClick }: any) {
 
         {extracting && (
           <div className="text-sm text-neutral-400">
-            Analyse du texte...
+            Extraction du texte
           </div>
         )}
 
@@ -1041,7 +1056,7 @@ function SortableItem({ capture, index, onClick }: any) {
 
     {extracting && (
       <div className="absolute bottom-10 text-sm text-neutral-400">
-        Analyse du texte...
+        Extraction du texte
       </div>
     )}
   </div>
