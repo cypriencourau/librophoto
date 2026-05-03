@@ -811,7 +811,7 @@ function SortableItem({ capture, index, onClick }: any) {
           </div>
         ))}
 
-        {captures.slice(0, 30).map((capture, index) => (
+        {captures.map((capture, index) => (
           <SortableItem
             key={capture.id}
             capture={capture}
