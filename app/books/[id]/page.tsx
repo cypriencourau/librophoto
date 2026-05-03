@@ -816,245 +816,241 @@ function SortableItem({ capture, index, onClick }: any) {
   </DndContext>
 )}
 
-      {/* MODAL */}
-        
-  {selectedIndex !== null && captures[selectedIndex] && (
+ {/* MODAL */}
+{selectedIndex !== null && captures[selectedIndex] && (
   <div
     onClick={closeModal}
-    className="fixed inset-0 bg-black/95 flex items-start md:items-center justify-center pt-6 md:pt-0 z-50 overflow-y-auto"
     onTouchStart={handleTouchStart}
     onTouchEnd={handleTouchEnd}
+    className="fixed inset-0 z-50 bg-black/95 flex flex-col"
   >
 
-    <div className="absolute top-4 right-4 md:right-6 z-60 flex gap-2">
+    {/* TOP BAR */}
+    <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800/60">
+      <span className="text-xs text-neutral-400">
+        {selectedIndex + 1} / {captures.length}
+      </span>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          deleteCapture(captures[selectedIndex])
-        }}
-        className="p-3 bg-black/60 hover:bg-red-600/80 transition rounded-full backdrop-blur"
-      >
-        <Trash2 size={18} />
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            deleteCapture(captures[selectedIndex])
+          }}
+          className="p-2 rounded-lg bg-neutral-800 hover:bg-red-600 transition"
+        >
+          <Trash2 size={16} />
+        </button>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          closeModal()
-        }}
-        className="p-3 bg-black/60 hover:bg-black/80 transition rounded-full backdrop-blur"
-      >
-        <X size={18} />
-      </button>
-
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            closeModal()
+          }}
+          className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition"
+        >
+          <X size={16} />
+        </button>
+      </div>
     </div>
 
-    {/* flèche gauche */}
+    {/* NAV DESKTOP */}
     {selectedIndex > 0 && (
       <button
         onClick={(e) => {
           e.stopPropagation()
           prevImage()
         }}
-        className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 text-4xl p-3 bg-black/40 rounded-full backdrop-blur"
+        className="hidden md:block absolute left-6 top-1/2 -translate-y-1/2 text-3xl bg-black/40 p-3 rounded-full backdrop-blur"
       >
         ‹
       </button>
     )}
 
-    {/* CONTENU */}
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-start w-full max-w-6xl px-4 md:px-10">
-
-      {/* IMAGE */}
-      <div className="relative w-full">
-        <img
-          ref={imageRef}
-          src={captures[selectedIndex].image_url}
-          onLoad={() => setImageLoaded(true)}
-          className="w-full md:max-w-[35vw] max-h-[50vh] md:max-h-[80vh] object-contain rounded-xl shadow-2xl"
-          alt=""
-        />
-
-
-        {ocrWords.length > 0 && imageLoaded && imageRef.current && (
-          <div className="hidden">
-            {ocrWords
-              .filter((word) => {
-                const img = imageRef.current!
-
-                const centerStartX = img.naturalWidth * 0.15
-                const centerEndX = img.naturalWidth * 0.85
-                const centerStartY = img.naturalHeight * 0.12
-                const centerEndY = img.naturalHeight * 0.88
-
-                const horizontalOk =
-                  word.bbox.x0 > centerStartX &&
-                  word.bbox.x1 < centerEndX
-
-                const verticalOk =
-                  word.bbox.y0 > centerStartY &&
-                  word.bbox.y1 < centerEndY
-
-                return horizontalOk && verticalOk
-              })
-              .map((word, i) => {
-                const img = imageRef.current!
-                const scaleX = img.clientWidth / img.naturalWidth
-                const scaleY = img.clientHeight / img.naturalHeight
-                const { x0, y0, x1, y1 } = word.bbox
-
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      left: x0 * scaleX,
-                      top: y0 * scaleY,
-                      width: (x1 - x0) * scaleX,
-                      height: (y1 - y0) * scaleY,
-                      backgroundColor: "rgba(255,255,0,0.2)",
-                    }}
-                  />
-                )
-              })}
-          </div>
-        )}
-      </div>
-
-      {/* TEXTE */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-7 w-full md:max-w-[520px] lg:max-w-[600px] h-[45vh] md:h-auto md:max-h-[80vh] overflow-y-auto mt-2 md:mt-4">
-
-        <h3 className="text-sm text-neutral-400 mb-4">
-          Texte extrait
-        </h3>
-
-        <div className="space-y-6">
-        {!captures[selectedIndex]?.ocr_text && !extracting && (
-          <div className="mt-6">
-            <button
-              onClick={() => {
-                  const capture = captures[selectedIndex]
-
-                  if (capture?.ocr_text) {
-                    setFullText(capture.ocr_text)
-                  } else {
-                    runOCR(capture.image_url)
-                  }
-                }}
-              className="w-full py-4 bg-white text-black rounded-xl text-sm font-medium"
-            >
-              Extraire le texte
-            </button>
-          </div>
-        )}
-
-        {extracting && (
-          <div className="text-sm text-neutral-400">
-            Extraction du texte
-          </div>
-        )}
-
-          <div className="flex flex-col sm:flex-row gap-3">
-
-          <input
-          value={pageNumber}
-          onChange={(e)=>setPageNumber(e.target.value)}
-          placeholder="page"
-          className="w-24 px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded-lg text-sm focus:outline-none focus:border-neutral-500"
-          />
-
-          <input
-          value={tagsInput}
-          onChange={(e)=>setTagsInput(e.target.value)}
-          placeholder="tags : foi silence prière"
-          className="flex-1 px-3 py-2.5 bg-neutral-800 border border-neutral-700 rounded-lg text-sm focus:outline-none focus:border-neutral-500"
-          />
-
-          </div>
-        </div>
-
-        {fullText !== "" && (
-          <>
-        <div
-          ref={textEditorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={(e) => {
-            setFullText(e.currentTarget.innerHTML)
-          }}
-          className="w-full max-w-[65ch] h-[35vh] md:h-[60vh] bg-neutral-800 text-[15px] leading-7 p-5 rounded-lg focus:outline-none whitespace-pre-wrap overflow-y-auto"
-        />
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-
-        <button
-          onClick={createPearlFromOCR}
-          disabled={saving}
-          className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {saving && (
-            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-          )}
-          {saving ? "Création..." : "Créer une perle"}
-        </button>
-
-            </div>
-          </>
-        )}
-
-      </div>
-    </div>
-
-    {/* flèche droite */}
     {selectedIndex < captures.length - 1 && (
       <button
         onClick={(e) => {
           e.stopPropagation()
           nextImage()
         }}
-        className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 text-4xl p-3 bg-black/40 rounded-full backdrop-blur"
+        className="hidden md:block absolute right-6 top-1/2 -translate-y-1/2 text-3xl bg-black/40 p-3 rounded-full backdrop-blur"
       >
         ›
       </button>
     )}
 
-    {extracting && (
-      <div className="absolute bottom-10 text-sm text-neutral-400">
-        Extraction du texte
-      </div>
-    )}
-  </div>
-)}
+    {/* MAIN */}
+    <div
+      onClick={(e) => e.stopPropagation()}
+className="
+  pt-16
+  flex-1
+  h-[80vh]
+  max-w-[1400px]
+  w-full
+  mx-auto
+  px-2 md:px-4
+  grid
+  md:grid-cols-2
+  gap-8
+  items-stretch
+"
+    >
 
-      <input
-      ref={fileInputCamera}
-      type="file"
-      accept="image/*"
-      capture="environment"
-      style={{ display: "none" }}
-      onChange={handleUpload}
-    />
-
-  <input
-    ref={fileInputGallery}
-    type="file"
-    accept="image/*"
-    multiple
-    style={{ display: "none" }}
-    onChange={handleUpload}
+       {/* IMAGE */}
+  <div className="h-full flex items-center justify-center">
+<div className="h-full flex items-center justify-center">
+  <img
+    ref={imageRef}
+    src={captures[selectedIndex!].image_url}
+    onLoad={() => setImageLoaded(true)}
+    className="
+      max-h-[80vh]
+      w-auto
+      object-contain
+      rounded-xl
+      border border-white/15
+      shadow-[0_20px_50px_rgba(0,0,0,0.55)]
+    "
   />
+</div>
+  </div>
+
+  {/* PANEL */}
+    <div className="h-full flex items-center justify-center">
+      <div className="
+        flex flex-col
+        h-[87%]        // 🔥 réduit la hauteur
+        max-h-[700px]  // 🔥 limite propre (optionnel mais pro)
+        w-full
+        bg-neutral-900/70
+        backdrop-blur-xl
+        border border-white/10
+        rounded-2xl
+        p-4
+      ">
+
+     {/* HEADER */}
+      <div className="mb-4 flex items-center justify-between gap-4">
+
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-white">
+            Texte extrait
+          </h3>
+          <p className="text-xs text-neutral-500">
+            Modifie puis enregistre
+          </p>
+        </div>
+
+        {/* ACTION */}
+        {!captures[selectedIndex]?.ocr_text && !extracting && (
+<button
+  onClick={() => runOCR(captures[selectedIndex!].image_url)}
+  className="
+    flex items-center justify-center gap-2
+    px-4 py-2.5
+    text-sm font-semibold
+    text-white
+    bg-gradient-to-r from-neutral-800 to-neutral-700
+    rounded-xl
+    border border-white/10
+    hover:from-neutral-700 hover:to-neutral-600
+    active:scale-95
+    transition
+  "
+>
+  ⚡ Extraire le texte
+</button>
+        )}
+
+        {extracting && (
+          <div className="flex items-center gap-2 text-xs text-neutral-400">
+            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Extraction...
+          </div>
+        )}
+
+      </div>
 
 
-{toast && (
-  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-    <div className="bg-white text-black text-sm px-4 py-2 rounded-full shadow-lg animate-fadeIn">
-      {toast}
+        {/* EDITOR */}
+        {fullText !== "" && (
+         <div className="flex-1 min-h-0 mt-2 mb-2">
+            <div
+              ref={textEditorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={(e) => setFullText(e.currentTarget.innerHTML)}
+              className="
+                h-full
+                min-h-0
+                overflow-y-auto
+                bg-black/40
+                border border-white/10
+                text-[17px]
+                leading-7
+                p-4
+                rounded-xl
+              "
+            />
+          </div>
+        )}
+
+          {/* META */}
+          {fullText !== "" && (
+            <div className="mt-4 flex gap-2">
+              <input
+                value={pageNumber}
+                onChange={(e)=>setPageNumber(e.target.value)}
+                placeholder="Page"
+                className="w-20 px-3 py-2 bg-black/40 border border-white/10 rounded-md text-sm focus:outline-none focus:border-white/20"
+              />
+
+              <input
+                value={tagsInput}
+                onChange={(e)=>setTagsInput(e.target.value)}
+                placeholder="Tags..."
+                className="flex-1 px-3 py-2 bg-black/40 border border-white/10 rounded-md text-sm focus:outline-none focus:border-white/20"
+              />
+            </div>
+          )}
+
+      {/* CTA */}
+        {fullText !== "" && (
+          <div className="mt-3 shrink-0 pb-1">
+            <button
+              onClick={createPearlFromOCR}
+              disabled={saving}
+              className="w-full py-3 bg-white text-black rounded-xl text-[15px] font-medium shadow-[0_10px_30px_rgba(0,0,0,0.4)] hover:opacity-90 active:scale-95 transition"
+            >
+              {saving ? "Création..." : "Enregistrer"}
+            </button>
+          </div>
+        )}
+
+        {/* ✅ TOAST INDÉPENDANT */}
+      {toast && (
+        <div className="mt-3 flex justify-center">
+          <div className="
+            flex items-center gap-2
+            bg-white text-black
+            text-sm font-medium
+            px-4 py-2
+            rounded-full
+            shadow-lg
+            animate-[fadeInUp_0.3s_ease]
+          ">
+            {toast}
+          </div>
+        </div>
+      )}
+
+        </div>
+      </div>
+
     </div>
   </div>
 )}
-
 
 
 {/* FLOATING ADD BUTTON */}
