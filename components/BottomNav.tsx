@@ -15,39 +15,76 @@ export default function BottomNav() {
   ]
 
   return (
+  <div className="fixed inset-x-0 bottom-0 z-50 hide-when-modal">
 
-    <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 hide-when-modal transition-all duration-300">
+    {/* MOBILE = FULL WIDTH */}
+    <div className="block sm:hidden">
 
-      <nav className="bg-neutral-900 border border-neutral-800 rounded-2xl px-6 py-3 flex gap-10 shadow-xl backdrop-blur">
+      <nav className="bg-neutral-900/90 backdrop-blur border-t border-neutral-800 flex justify-around items-center py-2 pb-[calc(8px+env(safe-area-inset-bottom))]">
 
         {items.map(({ href, icon: Icon }) => {
-
           const active = pathname === href
 
           return (
-
             <Link
               key={href}
               href={href}
-              className={`p-2 rounded-lg transition ${
-                active
-                  ? "text-white"
-                  : "text-neutral-500 hover:text-white"
-              }`}
+              className="flex flex-col items-center justify-center flex-1"
             >
+              <div
+                className={`p-2 rounded-xl transition-all duration-200 ${
+                  active
+                    ? "text-white"
+                    : "text-neutral-500"
+                }`}
+              >
+                <Icon size={22} />
+              </div>
 
-              <Icon size={22} />
-
+              {/* petit indicateur */}
+              <div
+                className={`mt-1 h-1 w-5 rounded-full transition-all ${
+                  active ? "bg-white" : "bg-transparent"
+                }`}
+              />
             </Link>
-
           )
-
         })}
 
       </nav>
-
     </div>
 
-  )
+    {/* DESKTOP = FLOATING CENTER */}
+    <div className="hidden sm:flex justify-center px-4 pb-6">
+
+      <nav className="bg-neutral-900/80 backdrop-blur border border-neutral-800 rounded-2xl shadow-xl flex gap-10 px-6 py-3">
+
+        {items.map(({ href, icon: Icon }) => {
+          const active = pathname === href
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center justify-center"
+            >
+              <div
+                className={`p-2 rounded-xl transition-colors duration-200 ${
+                  active
+                    ? "text-white bg-neutral-800"
+                    : "text-neutral-500 hover:text-white"
+                }`}
+              >
+                <Icon size={22} />
+              </div>
+            </Link>
+          )
+        })}
+
+      </nav>
+    </div>
+
+  </div>
+)
 
 }

@@ -30,3 +30,18 @@ body {
   opacity: 0;
   pointer-events: none;
 }
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}

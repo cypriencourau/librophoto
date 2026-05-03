@@ -165,7 +165,7 @@ export default function BookPage() {
       document.body.style.overflow = "auto"
       document.body.classList.remove("hide-nav")
     }
-  }, [selectedIndex])
+  }, [selectedIndex, captures])
 
     useEffect(() => {
       if (
@@ -672,47 +672,12 @@ function SortableItem({ capture, index, onClick }: any) {
 
         </div>
 
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 active:scale-95 transition"
-        >
-          📷
-        </button>
-
       </div>
     </div>
 
 
 
-      {menuOpen && (
-
-          <div className="px-4 pb-4 max-w-6xl mx-auto flex gap-2">
-
-          <button
-          onClick={()=>{
-          setMenuOpen(false)
-          fileInputCamera.current?.click()
-          }}
-          className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm"
-          >
-          📷 Camera
-          </button>
-
-          <button
-          onClick={()=>{
-          setMenuOpen(false)
-          fileInputGallery.current?.click()
-          }}
-          className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm"
-          >
-          🖼 Galerie
-          </button>
-
-          </div>
-
-          )}
-
-      {/* TABS */}
+        {/* TABS */}
 
       <div className="px-4 pt-4 max-w-6xl mx-auto">
       <div className="inline-flex bg-neutral-900 border border-neutral-800 rounded-xl p-1">
@@ -1090,6 +1055,69 @@ function SortableItem({ capture, index, onClick }: any) {
 )}
 
 
+
+{/* FLOATING ADD BUTTON */}
+<div className="fixed right-5 z-40 bottom-[calc(80px+env(safe-area-inset-bottom))]">
+
+  <button
+    onClick={() => setMenuOpen(prev => !prev)}
+    className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition"
+  >
+    +
+  </button>
+
+</div>
+
+
+{/* BOTTOM SHEET */}
+{menuOpen && (
+  <div className="fixed inset-0 z-50">
+
+    {/* BACKDROP */}
+    <div
+      onClick={() => setMenuOpen(false)}
+      className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+    />
+
+    {/* SHEET */}
+    <div className="absolute bottom-0 left-0 right-0 bg-neutral-900 border-t border-neutral-800 rounded-t-3xl p-6 pb-[calc(20px+env(safe-area-inset-bottom))] animate-slideUp">
+
+      {/* HANDLE */}
+      <div className="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-6" />
+
+      {/* TITLE */}
+      <h3 className="text-sm text-neutral-400 mb-4 text-center">
+        Ajouter une photo
+      </h3>
+
+      {/* ACTIONS */}
+      <div className="flex flex-col gap-3">
+
+        <button
+          onClick={() => {
+            setMenuOpen(false)
+            fileInputCamera.current?.click()
+          }}
+          className="w-full py-4 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center gap-2 text-sm hover:scale-[1.02] active:scale-[0.98] transition"
+        >
+          📷 Prendre une photo
+        </button>
+
+        <button
+          onClick={() => {
+            setMenuOpen(false)
+            fileInputGallery.current?.click()
+          }}
+          className="w-full py-4 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center gap-2 text-sm hover:scale-[1.02] active:scale-[0.98] transition"
+        >
+          🖼 Importer depuis la galerie
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+)}
     </main>
   )
 }
