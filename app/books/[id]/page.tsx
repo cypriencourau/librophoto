@@ -98,6 +98,12 @@ export default function BookPage() {
   const fileInputCamera = useRef<HTMLInputElement | null>(null)
   const fileInputGallery = useRef<HTMLInputElement | null>(null)
 
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [rawFile, setRawFile] = useState<File | null>(null)
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+
   async function fetchPearls(){
 
   if(!bookId) return
@@ -352,117 +358,109 @@ if (selectedIndex !== null) {
 }
 
 // ================= UPLOAD PHOTO =================
-
 async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const files = e.target.files
   if (!files || !bookId) return
 
-const fileArray = Array.from(files)
-  .map((file, index) => ({ file, index }))
-  .sort((a, b) => {
-    if (a.file.lastModified === b.file.lastModified) {
-      return b.index - a.index
-    }
-    return b.file.lastModified - a.file.lastModified
-  })
-  .map(obj => obj.file)
+  const file = files[0] // 👈 UNE photo (caméra)
+
+  const preview = URL.createObjectURL(file)
+
+  setPreviewImage(preview)
+  setRawFile(file)
 
   setMenuOpen(false)
 
-  try {
-    const previews = fileArray.map(file => URL.createObjectURL(file))
-    setUploadingPreview(previews)
-
-    let currentMinPosition =
-    captures.length > 0
-      ? Math.min(...captures.map(c => c.position ?? 0))
-      : 0
-
-      for (const file of fileArray) {
-        try {
-          const compressedFile = await imageCompression(file, {
-            maxSizeMB: 0.4,
-            maxWidthOrHeight: 1600,
-            useWebWorker: true,
-            initialQuality: 0.7
-          })
-
-          console.log(
-            `Avant: ${(file.size / 1024 / 1024).toFixed(2)} MB → Après: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`
-          )
-
-          const safeName = file.name
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9.-]/g, "")
-
-          const fileName = `${bookId}/${Date.now()}-${safeName}`
-
-          const { error: uploadError } = await supabase.storage
-            .from("captures")
-            .upload(fileName, compressedFile, {
-              contentType: compressedFile.type
-            })
-
-          if (uploadError) {
-            console.error("Upload error:", uploadError)
-            continue
-          }
-
-          const { data } = supabase.storage
-            .from("captures")
-            .getPublicUrl(fileName)
-
-          const minPosition =
-          captures.length > 0
-            ? Math.min(...captures.map(c => c.position ?? 0))
-            : 0
-
-          currentMinPosition = currentMinPosition - 1
-          const newPosition = currentMinPosition
-
-          const { data: newCapture, error: insertError } = await supabase
-            .from("captures")
-            .insert({
-              book_id: bookId,
-              image_url: data.publicUrl,
-              position: newPosition
-            })
-            .select()
-            .single()
-
-          if (insertError) {
-            console.error("Insert error:", insertError)
-            return
-          }
-
-        if (newCapture) {
-          setCaptures(prev => {
-            const updated = [newCapture, ...prev]
-
-            if (prev.length === 0) {
-              supabase
-                .from("books")
-                .update({ cover: newCapture.image_url })
-                .eq("id", bookId)
-            }
-
-            return updated
-          })
-        }
-
-        } catch (err) {
-          console.error("Erreur sur une image :", err)
-        }
-      }
-
-  } catch (err) {
-    console.error("Global upload error:", err)
-  } finally {
-  uploadingPreview.forEach(url => URL.revokeObjectURL(url))
-  setUploadingPreview([])
   e.target.value = ""
+
+  return // 🚨 IMPORTANT : bloque l’ancien upload
 }
+
+function draw(e: any) {
+  if (!isDrawing) return
+
+  const canvas = canvasRef.current
+if (!canvas) return
+if (!canvas) return
+if (!canvas) return
+  const ctx = canvas?.getContext("2d")
+  if (!ctx) return
+
+  const rect = canvas.getBoundingClientRect()
+
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+
+  ctx.lineTo(x, y)
+  ctx.stroke()
+}
+
+async function uploadEditedImage() {
+  if (!rawFile || !canvasRef.current || !imageRef.current || !bookId) return
+
+  const img = imageRef.current
+  const canvas = canvasRef.current
+if (!canvas) return
+if (!canvas) return
+if (!canvas) return
+
+  const finalCanvas = document.createElement("canvas")
+  const ctx = finalCanvas.getContext("2d")
+
+  finalCanvas.width = img.naturalWidth
+  finalCanvas.height = img.naturalHeight
+
+  ctx!.drawImage(img, 0, 0)
+
+ ctx!.drawImage(
+  canvas,
+  0,
+  0,
+  canvas.width,
+  canvas.height,
+  0,
+  0,
+  finalCanvas.width,
+  finalCanvas.height
+)
+
+  const blob: Blob = await new Promise(resolve =>
+    finalCanvas.toBlob(resolve as any, "image/jpeg", 0.9)
+  )
+
+  const fileName = `${bookId}/${Date.now()}.jpg`
+
+  const { error } = await supabase.storage
+    .from("captures")
+    .upload(fileName, blob, {
+      contentType: "image/jpeg"
+    })
+
+  if (error) {
+    setToast("Erreur upload")
+    return
+  }
+
+  const { data } = supabase.storage
+    .from("captures")
+    .getPublicUrl(fileName)
+
+  const { data: newCapture } = await supabase
+    .from("captures")
+    .insert({
+      book_id: bookId,
+      image_url: data.publicUrl,
+      position: Date.now()
+    })
+    .select()
+    .single()
+
+  if (newCapture) {
+    setCaptures(prev => [...prev, newCapture])
+  }
+
+  setPreviewImage(null)
+  setRawFile(null)
 }
 
     // ======== SUPPR PHOTO==========
@@ -642,6 +640,41 @@ function SortableItem({ capture, index, onClick }: any) {
   )
 }
 
+    // ===== DRAW FUNCTIONS =====
+function startDrawing(e: any) {
+  const canvas = canvasRef.current
+if (!canvas) return
+if (!canvas) return
+if (!canvas) return
+  const ctx = canvas?.getContext("2d")
+  if (!ctx) return
+
+  const rect = canvas.getBoundingClientRect()
+
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+
+  ctx.beginPath()
+  ctx.moveTo(x, y)
+
+  ctx.strokeStyle = "red"
+  ctx.lineWidth = 3
+  ctx.lineCap = "round"
+
+  setIsDrawing(true)
+}
+
+function stopDrawing() {
+  setIsDrawing(false)
+
+  const canvas = canvasRef.current
+if (!canvas) return
+if (!canvas) return
+if (!canvas) return
+  const ctx = canvas?.getContext("2d")
+  ctx?.beginPath()
+}
+
 
   // ================= RENDER =================
 
@@ -815,6 +848,90 @@ function SortableItem({ capture, index, onClick }: any) {
     </SortableContext>
   </DndContext>
 )}
+
+
+
+
+
+    {previewImage && (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center p-4">
+          <button
+          onClick={() => {
+            if (previewImage) URL.revokeObjectURL(previewImage)
+            setPreviewImage(null)
+            setRawFile(null)
+          }}
+            className="text-white"
+          >
+            Annuler
+          </button>
+
+          <button
+            onClick={uploadEditedImage}
+            className="bg-white text-black px-4 py-2 rounded-lg"
+          >
+            Sauver
+          </button>
+        </div>
+
+        
+
+        {/* IMAGE + DRAW */}
+        <div className="flex-1 flex items-center justify-center relative">
+        <div className="relative inline-block">
+
+          
+
+          <img
+            ref={imageRef}
+            src={previewImage}
+            className="max-h-[80vh] object-contain"
+            onLoad={() => {
+            const canvas = canvasRef.current
+if (!canvas) return
+if (!canvas) return
+if (!canvas) return
+            const img = imageRef.current
+            if (!canvas || !img) return
+
+            const rect = img.getBoundingClientRect()
+            const ctx = canvas.getContext("2d")
+
+            const dpr = window.devicePixelRatio || 1
+
+            canvas.width = rect.width * dpr
+            canvas.height = rect.height * dpr
+
+            canvas.style.width = `${rect.width}px`
+            canvas.style.height = `${rect.height}px`
+
+            ctx?.scale(dpr, dpr)
+          }}
+          />
+
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0"
+          onMouseDown={startDrawing}
+          onMouseUp={stopDrawing}
+            onMouseLeave={() => setIsDrawing(false)}
+            onMouseMove={draw}
+
+          onTouchStart={startDrawing}
+          onTouchEnd={stopDrawing}
+            onTouchMove={draw}
+          />
+
+          </div>
+        </div>
+      </div>
+      
+    )}
+
+
 
  {/* MODAL */}
 {selectedIndex !== null && captures[selectedIndex] && (
@@ -1145,6 +1262,28 @@ function SortableItem({ capture, index, onClick }: any) {
     </div>
   </div>
 )}
+
+
+<input
+  ref={fileInputCamera}
+  type="file"
+  accept="image/*"
+  capture="environment"
+  multiple
+  onChange={handleUpload}
+  className="hidden"
+/>
+
+<input
+  ref={fileInputGallery}
+  type="file"
+  accept="image/*"
+  multiple
+  onChange={handleUpload}
+  className="hidden"
+/>
+
+
     </main>
   )
 }
