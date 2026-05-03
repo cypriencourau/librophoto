@@ -675,10 +675,11 @@ function SortableItem({ capture, index, onClick }: any) {
     isDragging
   } = useSortable({ id: capture.id })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition
-  }
+const style = {
+  transform: CSS.Transform.toString(transform),
+  transition,
+  willChange: "transform"
+}
 
   return (
     <div
@@ -703,12 +704,13 @@ function SortableItem({ capture, index, onClick }: any) {
     startPos.current = null
   }}
     
-      className={`group relative aspect-3/4 rounded-2xl overflow-hidden cursor-pointer
-      animate-[fadeIn_0.25s_ease]
-      bg-neutral-900 border border-neutral-800
-      hover:border-neutral-600 hover:-translate-y-1 transition-all duration-300
-      ${isDragging ? "opacity-50 scale-95" : ""}
-      `}
+        className={`group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer
+        bg-neutral-900 border border-neutral-800
+        hover:border-neutral-600
+        hover:-translate-y-1
+        transition-transform duration-300
+        ${isDragging ? "opacity-50 scale-95" : ""}
+        `}
     >
       
 
@@ -724,7 +726,14 @@ function SortableItem({ capture, index, onClick }: any) {
         src={capture.image_url}
         loading="lazy"
         decoding="async"
-        className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
+        className="
+          w-full h-full object-cover
+          transition-transform duration-500
+          group-hover:scale-110
+          will-change-transform
+          transform-gpu
+          backface-hidden
+        "
       />
 
       {/* overlay hover */}
@@ -903,47 +912,47 @@ if (!canvas) return
 
 
     {/* GRID */}
-{tab === "photos" && (
-  <DndContext
-  sensors={sensors}
-  collisionDetection={closestCenter}
-  onDragEnd={handleDragEnd}
->
-    <SortableContext
-  items={captures.map(c => c.id)}
-      strategy={rectSortingStrategy}
+    {tab === "photos" && (
+      <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
     >
-      <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
+        <SortableContext
+      items={captures.map(c => c.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="px-4 pt-6 pb-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto">
 
-        {uploadingPreview.map((url, i) => (
-          <div
-            key={i}
-            className="aspect-3/4 bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
-          >
-            <img
-              src={url}
-              className="w-full h-full object-cover opacity-70"
-              alt=""
-            />
+            {uploadingPreview.map((url, i) => (
+              <div
+                key={i}
+                className="aspect-[3/4] bg-neutral-900 rounded-2xl overflow-hidden animate-pulse"
+              >
+                <img
+                  src={url}
+                  className="w-full h-full object-cover opacity-70"
+                  alt=""
+                />
+              </div>
+            ))}
+
+            {captures.map((capture, index) => (
+              <SortableItem
+                key={capture.id}
+                capture={capture}
+                index={index}
+                onClick={() => {
+                  const newIndex = captures.findIndex(c => c.id === capture.id)
+                  setSelectedIndex(newIndex)
+                }}
+              />
+            ))}
+
           </div>
-        ))}
-
-        {captures.map((capture, index) => (
-          <SortableItem
-            key={capture.id}
-            capture={capture}
-            index={index}
-            onClick={() => {
-              const newIndex = captures.findIndex(c => c.id === capture.id)
-              setSelectedIndex(newIndex)
-            }}
-          />
-        ))}
-
-      </div>
-    </SortableContext>
-  </DndContext>
-)}
+        </SortableContext>
+      </DndContext>
+    )}
 
 
 
@@ -966,7 +975,7 @@ if (!canvas) return
           </button>
 
           <button
-            onClick={uploadEditedImage}
+        onClick={uploadEditedImage}
             disabled={uploading}
             className={`
               px-4 py-2 rounded-lg font-medium transition
