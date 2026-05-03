@@ -78,6 +78,7 @@ export default function BookPage() {
   const [scannedIds, setScannedIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const touchStartX = useRef<number | null>(null)
@@ -381,8 +382,6 @@ function draw(e: any) {
 
   const canvas = canvasRef.current
 if (!canvas) return
-if (!canvas) return
-if (!canvas) return
   const ctx = canvas?.getContext("2d")
   if (!ctx) return
 
@@ -396,71 +395,148 @@ if (!canvas) return
 }
 
 async function uploadEditedImage() {
-  if (!rawFile || !canvasRef.current || !imageRef.current || !bookId) return
+  console.log("CLICK SAVE")
+  setUploading(true)
+
+  // 🔒 Guards propres
+    if (!rawFile || !bookId) {
+      console.error("Missing rawFile or bookId")
+      setToast("Erreur interne")
+      setUploading(false)
+      return
+    }
 
   const img = imageRef.current
   const canvas = canvasRef.current
-if (!canvas) return
-if (!canvas) return
-if (!canvas) return
 
+  if (!img || !canvas) {
+    console.error("Image or canvas missing")
+    setToast("Erreur canvas")
+    setUploading(false)
+    return
+  }
+
+  if (!img.complete || img.naturalWidth === 0) {
+    console.error("Image not loaded")
+    setToast("Image pas prête")
+    setUploading(false)
+    return
+  }
+
+  // 🎨 Canvas final
   const finalCanvas = document.createElement("canvas")
   const ctx = finalCanvas.getContext("2d")
+
+  if (!ctx) {
+    console.error("Context 2D null")
+    setToast("Erreur canvas")
+    setUploading(false)
+    return
+  }
 
   finalCanvas.width = img.naturalWidth
   finalCanvas.height = img.naturalHeight
 
-  ctx!.drawImage(img, 0, 0)
+  console.log("canvas OK")
 
- ctx!.drawImage(
-  canvas,
-  0,
-  0,
-  canvas.width,
-  canvas.height,
-  0,
-  0,
-  finalCanvas.width,
-  finalCanvas.height
-)
+  // 🖼️ Dessin image + overlay
+  ctx.drawImage(img, 0, 0)
 
-  const blob: Blob = await new Promise(resolve =>
-    finalCanvas.toBlob(resolve as any, "image/jpeg", 0.9)
+  ctx.drawImage(
+    canvas,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+    0,
+    0,
+    finalCanvas.width,
+    finalCanvas.height
   )
 
+  console.log("draw OK")
+
+  // 📦 Conversion blob
+  const blob: Blob | null = await new Promise(resolve =>
+    finalCanvas.toBlob(resolve, "image/jpeg", 0.9)
+  )
+
+  if (!blob) {
+    console.error("Blob null")
+    setToast("Erreur génération image")
+    setUploading(false)
+    return
+  }
+
+  console.log("blob OK")
+
+  // ☁️ Upload Supabase
   const fileName = `${bookId}/${Date.now()}.jpg`
 
-  const { error } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from("captures")
     .upload(fileName, blob, {
       contentType: "image/jpeg"
     })
 
-  if (error) {
+  if (uploadError) {
+    console.error("UPLOAD ERROR:", uploadError)
     setToast("Erreur upload")
+    setUploading(false)
     return
   }
+
+  console.log("upload OK")
 
   const { data } = supabase.storage
     .from("captures")
     .getPublicUrl(fileName)
 
-  const { data: newCapture } = await supabase
-    .from("captures")
-    .insert({
-      book_id: bookId,
-      image_url: data.publicUrl,
-      position: Date.now()
-    })
-    .select()
-    .single()
-
-  if (newCapture) {
-    setCaptures(prev => [...prev, newCapture])
+  if (!data?.publicUrl) {
+    console.error("No public URL")
+    setToast("Erreur URL")
+    return
   }
 
-  setPreviewImage(null)
-  setRawFile(null)
+  // 🗄️ Insert DB
+      // 🧠 Calcul de la position (pour mettre l’image en PREMIER)
+      const minPosition =
+        captures.length > 0
+          ? Math.min(...captures.map(c => c.position ?? 0))
+          : 0
+
+      const newPosition = minPosition - 1
+
+      // 🗄️ Insert DB avec position
+      const { data: newCapture, error: insertError } = await supabase
+        .from("captures")
+        .insert({
+          book_id: bookId,
+          image_url: data.publicUrl,
+          position: newPosition // ✅ IMPORTANT
+        })
+        .select()
+        .single()
+
+      // ❌ gestion erreur
+      if (insertError) {
+        console.error("INSERT ERROR:", insertError)
+        setToast("Erreur DB")
+        setUploading(false)
+        return
+      }
+
+      console.log("insert OK")
+
+  // ⚡ Update UI
+      if (newCapture) {
+        setCaptures(prev => [newCapture, ...prev])
+
+        setPreviewImage(null)
+        setRawFile(null)
+
+        setUploading(false)
+      }
 }
 
     // ======== SUPPR PHOTO==========
@@ -644,8 +720,6 @@ function SortableItem({ capture, index, onClick }: any) {
 function startDrawing(e: any) {
   const canvas = canvasRef.current
 if (!canvas) return
-if (!canvas) return
-if (!canvas) return
   const ctx = canvas?.getContext("2d")
   if (!ctx) return
 
@@ -668,8 +742,6 @@ function stopDrawing() {
   setIsDrawing(false)
 
   const canvas = canvasRef.current
-if (!canvas) return
-if (!canvas) return
 if (!canvas) return
   const ctx = canvas?.getContext("2d")
   ctx?.beginPath()
@@ -871,9 +943,23 @@ if (!canvas) return
 
           <button
             onClick={uploadEditedImage}
-            className="bg-white text-black px-4 py-2 rounded-lg"
+            disabled={uploading}
+            className={`
+              px-4 py-2 rounded-lg font-medium transition
+              ${uploading
+                ? "bg-neutral-700 text-neutral-300 cursor-not-allowed"
+                : "bg-white text-black hover:scale-105 active:scale-95"
+              }
+            `}
           >
-            Sauver
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Sauvegarde...
+              </span>
+            ) : (
+              "Sauvegarder"
+            )}
           </button>
         </div>
 
@@ -891,9 +977,7 @@ if (!canvas) return
             className="max-h-[80vh] object-contain"
             onLoad={() => {
             const canvas = canvasRef.current
-if (!canvas) return
-if (!canvas) return
-if (!canvas) return
+          if (!canvas) return
             const img = imageRef.current
             if (!canvas || !img) return
 
