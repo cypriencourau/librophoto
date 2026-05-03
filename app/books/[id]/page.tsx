@@ -84,6 +84,7 @@ export default function BookPage() {
   const textEditorRef = useRef<HTMLDivElement | null>(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [closingSheet, setClosingSheet] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState<string[]>([])
   const sensors = useSensors(
   useSensor(PointerSensor, {
@@ -1075,12 +1076,33 @@ function SortableItem({ capture, index, onClick }: any) {
 
     {/* BACKDROP */}
     <div
-      onClick={() => setMenuOpen(false)}
-      className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onClick={() => {
+        setClosingSheet(true)
+        setTimeout(() => {
+          setMenuOpen(false)
+          setClosingSheet(false)
+        }, 220)
+      }}
+      className={`
+        absolute inset-0 
+        bg-black/50 backdrop-blur-sm
+        ${closingSheet ? "animate-backdrop-out" : "animate-backdrop-in"}
+      `}
     />
 
     {/* SHEET */}
-    <div className="absolute bottom-0 left-0 right-0 bg-neutral-900 border-t border-neutral-800 rounded-t-3xl p-6 pb-[calc(20px+env(safe-area-inset-bottom))] animate-slideUp">
+    <div
+      className={`
+        absolute bottom-0 left-0 right-0 
+        bg-neutral-900 border-t border-neutral-800 
+        rounded-t-3xl 
+        p-6 
+        sheet-safe
+        max-h-[85vh]
+        overflow-y-auto
+        ${closingSheet ? "animate-sheet-out" : "animate-sheet-in"}
+      `}
+    >
 
       {/* HANDLE */}
       <div className="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-6" />
@@ -1095,8 +1117,12 @@ function SortableItem({ capture, index, onClick }: any) {
 
         <button
           onClick={() => {
-            setMenuOpen(false)
-            fileInputCamera.current?.click()
+            setClosingSheet(true)
+            setTimeout(() => {
+              setMenuOpen(false)
+              setClosingSheet(false)
+              fileInputCamera.current?.click()
+            }, 220)
           }}
           className="w-full py-4 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center gap-2 text-sm hover:scale-[1.02] active:scale-[0.98] transition"
         >
@@ -1105,8 +1131,12 @@ function SortableItem({ capture, index, onClick }: any) {
 
         <button
           onClick={() => {
-            setMenuOpen(false)
-            fileInputGallery.current?.click()
+            setClosingSheet(true)
+            setTimeout(() => {
+              setMenuOpen(false)
+              setClosingSheet(false)
+              fileInputGallery.current?.click()
+            }, 220)
           }}
           className="w-full py-4 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center gap-2 text-sm hover:scale-[1.02] active:scale-[0.98] transition"
         >

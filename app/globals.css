@@ -31,7 +31,9 @@ body {
   pointer-events: none;
 }
 
-@keyframes slideUp {
+/* ===== BOTTOM SHEET ANIMATIONS ===== */
+
+@keyframes sheet-in {
   from {
     transform: translateY(100%) scale(0.98);
     opacity: 0;
@@ -42,6 +44,68 @@ body {
   }
 }
 
-.animate-slideUp {
-  animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+@keyframes sheet-out {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%) scale(0.98);
+    opacity: 0;
+  }
+}
+
+.animate-sheet-in {
+  animation: sheet-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-sheet-out {
+  animation: sheet-out 0.22s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ===== BACKDROP ===== */
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-backdrop-in {
+  animation: backdrop-in 0.25s ease;
+}
+
+.animate-backdrop-out {
+  animation: backdrop-out 0.2s ease forwards;
+}
+
+/* ===== SAFE AREA (important mobile) ===== */
+
+.sheet-safe {
+  padding-bottom: calc(90px + env(safe-area-inset-bottom));
+}
+
+/* ===== MOBILE TOUCH UX ===== */
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== RENDER PREMIUM ===== */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
