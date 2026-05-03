@@ -882,19 +882,19 @@ function SortableItem({ capture, index, onClick }: any) {
     {/* MAIN */}
     <div
       onClick={(e) => e.stopPropagation()}
-className="
-  pt-16
-  flex-1
-  h-[80vh]
-  max-w-[1400px]
-  w-full
-  mx-auto
-  px-2 md:px-4
-  grid
-  md:grid-cols-2
-  gap-8
-  items-stretch
-"
+      className="
+        pt-16
+        flex-1
+        h-[80vh] overflow-y-auto
+        max-w-[1400px]
+        w-full
+        mx-auto
+        px-2 md:px-4
+        grid
+        grid-cols-1 md:grid-cols-2
+        gap-2
+        items-stretch
+      "
     >
 
        {/* IMAGE */}
@@ -905,7 +905,8 @@ className="
     src={captures[selectedIndex!].image_url}
     onLoad={() => setImageLoaded(true)}
     className="
-      max-h-[80vh]
+      max-h-[40vh] md:max-h-[80vh]
+      w-full md:w-auto
       w-auto
       object-contain
       rounded-xl
@@ -931,7 +932,7 @@ className="
       ">
 
      {/* HEADER */}
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
         <div className="space-y-1">
           <h3 className="text-base font-semibold text-white">
@@ -1017,7 +1018,7 @@ className="
 
       {/* CTA */}
         {fullText !== "" && (
-          <div className="mt-3 shrink-0 pb-1">
+          <div className="mt-4 pb-2 md:pb-1 shrink-0 pb-1">
             <button
               onClick={createPearlFromOCR}
               disabled={saving}
