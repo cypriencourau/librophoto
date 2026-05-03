@@ -485,8 +485,12 @@ async function uploadEditedImage() {
     scanned: false
   }
 
-  // 🔥 affichage immédiat
-  setCaptures(prev => [tempCapture, ...prev])
+      // 🔥 afficher direct AVANT toute async
+    setCaptures(prev => [tempCapture, ...prev])
+
+    // 🔥 fermer instant UI
+    setPreviewImage(null)
+    setRawFile(null)
 
   const { error: uploadError } = await supabase.storage
     .from("captures")
@@ -495,11 +499,14 @@ async function uploadEditedImage() {
     })
 
   if (uploadError) {
-    console.error("UPLOAD ERROR:", uploadError)
-    setToast("Erreur upload")
-    
-    return
-  }
+  console.error("UPLOAD ERROR:", uploadError)
+  setToast("Erreur upload")
+
+  // 🔥 rollback UI
+  setCaptures(prev => prev.filter(c => c.id !== tempId))
+
+  return
+}
 
   console.log("upload OK")
 
@@ -550,6 +557,8 @@ async function uploadEditedImage() {
             c.id === tempId ? newCapture : c
           )
         )
+
+          URL.revokeObjectURL(localUrl)
       }
 }
 
@@ -695,6 +704,7 @@ function SortableItem({ capture, index, onClick }: any) {
   }}
     
       className={`group relative aspect-3/4 rounded-2xl overflow-hidden cursor-pointer
+      animate-[fadeIn_0.25s_ease]
       bg-neutral-900 border border-neutral-800
       hover:border-neutral-600 hover:-translate-y-1 transition-all duration-300
       ${isDragging ? "opacity-50 scale-95" : ""}
