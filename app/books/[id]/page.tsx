@@ -396,13 +396,13 @@ if (!canvas) return
 
 async function uploadEditedImage() {
   console.log("CLICK SAVE")
-  setUploading(true)
+  
 
   // 🔒 Guards propres
     if (!rawFile || !bookId) {
       console.error("Missing rawFile or bookId")
       setToast("Erreur interne")
-      setUploading(false)
+      
       return
     }
 
@@ -412,14 +412,14 @@ async function uploadEditedImage() {
   if (!img || !canvas) {
     console.error("Image or canvas missing")
     setToast("Erreur canvas")
-    setUploading(false)
+    
     return
   }
 
   if (!img.complete || img.naturalWidth === 0) {
     console.error("Image not loaded")
     setToast("Image pas prête")
-    setUploading(false)
+    
     return
   }
 
@@ -430,7 +430,7 @@ async function uploadEditedImage() {
   if (!ctx) {
     console.error("Context 2D null")
     setToast("Erreur canvas")
-    setUploading(false)
+    
     return
   }
 
@@ -464,7 +464,7 @@ async function uploadEditedImage() {
   if (!blob) {
     console.error("Blob null")
     setToast("Erreur génération image")
-    setUploading(false)
+    
     return
   }
 
@@ -472,6 +472,21 @@ async function uploadEditedImage() {
 
   // ☁️ Upload Supabase
   const fileName = `${bookId}/${Date.now()}.jpg`
+
+  const tempId = "temp-" + Date.now()
+
+  const localUrl = URL.createObjectURL(blob)
+
+  const tempCapture = {
+    id: tempId,
+    image_url: localUrl,
+    created_at: new Date().toISOString(),
+    position: -999, // top direct
+    scanned: false
+  }
+
+  // 🔥 affichage immédiat
+  setCaptures(prev => [tempCapture, ...prev])
 
   const { error: uploadError } = await supabase.storage
     .from("captures")
@@ -482,7 +497,7 @@ async function uploadEditedImage() {
   if (uploadError) {
     console.error("UPLOAD ERROR:", uploadError)
     setToast("Erreur upload")
-    setUploading(false)
+    
     return
   }
 
@@ -522,7 +537,7 @@ async function uploadEditedImage() {
       if (insertError) {
         console.error("INSERT ERROR:", insertError)
         setToast("Erreur DB")
-        setUploading(false)
+        
         return
       }
 
@@ -530,12 +545,11 @@ async function uploadEditedImage() {
 
   // ⚡ Update UI
       if (newCapture) {
-        setCaptures(prev => [newCapture, ...prev])
-
-        setPreviewImage(null)
-        setRawFile(null)
-
-        setUploading(false)
+        setCaptures(prev =>
+          prev.map(c =>
+            c.id === tempId ? newCapture : c
+          )
+        )
       }
 }
 
@@ -971,34 +985,31 @@ if (!canvas) return
 
           
 
-          <img
-            ref={imageRef}
-            src={previewImage}
-            className="max-h-[80vh] object-contain"
+        <img
+          ref={imageRef}
+          src={previewImage}
+          className="w-screen h-screen object-cover"
             onLoad={() => {
-            const canvas = canvasRef.current
-          if (!canvas) return
-            const img = imageRef.current
-            if (!canvas || !img) return
+              const canvas = canvasRef.current
+              const img = imageRef.current
+              if (!canvas || !img) return
 
-            const rect = img.getBoundingClientRect()
-            const ctx = canvas.getContext("2d")
+              const dpr = window.devicePixelRatio || 1
 
-            const dpr = window.devicePixelRatio || 1
+              canvas.width = img.clientWidth * dpr
+              canvas.height = img.clientHeight * dpr
 
-            canvas.width = rect.width * dpr
-            canvas.height = rect.height * dpr
+              canvas.style.width = `${img.clientWidth}px`
+              canvas.style.height = `${img.clientHeight}px`
 
-            canvas.style.width = `${rect.width}px`
-            canvas.style.height = `${rect.height}px`
-
-            ctx?.scale(dpr, dpr)
+              const ctx = canvas.getContext("2d")
+              ctx?.scale(dpr, dpr)
           }}
           />
 
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0"
+          className="absolute top-0 left-0 w-full h-full"
           onMouseDown={startDrawing}
           onMouseUp={stopDrawing}
             onMouseLeave={() => setIsDrawing(false)}
