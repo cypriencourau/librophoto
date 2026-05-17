@@ -1007,7 +1007,7 @@ if (!canvas) return
         <img
           ref={imageRef}
           src={previewImage}
-          className="w-screen h-screen object-cover"
+          className="max-w-full max-h-full object-contain"
             onLoad={() => {
               const canvas = canvasRef.current
               const img = imageRef.current

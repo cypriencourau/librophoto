@@ -9,14 +9,12 @@ type Pearl = {
   id: string
   content: string
   source: string | null
-  theme: string | null
   tags: string | null
 }
 
 export default function Library(){
 
 const [pearls,setPearls] = useState<Pearl[]>([])
-const [themes,setThemes] = useState<string[]>([])
 const [tags,setTags] = useState<string[]>([])
 const [tagSearch,setTagSearch] = useState("")
 const filteredTagSuggestions = tags
@@ -26,7 +24,6 @@ const filteredTagSuggestions = tags
   .slice(0, 8)
 
 const [search,setSearch] = useState("")
-const [activeTheme,setActiveTheme] = useState<string | null>(null)
 const [activeTags,setActiveTags] = useState<string[]>([])
 
 const [loading,setLoading] = useState(true)
@@ -35,7 +32,6 @@ const [showForm,setShowForm] = useState(false)
 
 const [content,setContent] = useState("")
 const [source,setSource] = useState("")
-const [theme,setTheme] = useState("")
 const [tagInput,setTagInput] = useState("")
 
 
@@ -58,7 +54,7 @@ setActiveTags([...activeTags,tag])
 
 useEffect(()=>{
 loadPearls()
-},[search,activeTheme,activeTags])
+},[search,activeTags])
 
 
 async function loadPearls(){
@@ -67,18 +63,13 @@ setLoading(true)
 
 const isFiltering =
   search !== "" ||
-  activeTheme !== null ||
   activeTags.length > 0
 
 let query = supabase
 .from("pearls")
-.select("id,content,source,theme,tags,created_at")
+.select("id,content,source,tags,created_at")
 .order("created_at",{ascending:false})
 .limit(isFiltering ? 80 : 40)
-
-if(activeTheme){
-query = query.eq("theme",activeTheme)
-}
 
 if(search){
 query = query.ilike("content",`%${search}%`)
@@ -131,14 +122,10 @@ console.error(error)
 return
 }
 
-const themeSet = new Set<string>()
 const tagSet = new Set<string>()
 
 data?.forEach(p=>{
 
-if(p.theme){
-themeSet.add(p.theme)
-}
 
 if(p.tags){
 p.tags.split(" ").forEach((t:string)=>{
@@ -148,7 +135,6 @@ if(t.trim()) tagSet.add(t)
 
 })
 
-setThemes(Array.from(themeSet).sort())
 setTags(Array.from(tagSet).sort())
 
 }
@@ -166,7 +152,6 @@ const {data,error} = await supabase
 .insert({
 content,
 source,
-theme,
 tags:tagInput
 })
 .select()
@@ -177,14 +162,9 @@ console.error(error)
 return
 }
 
-setPearls(prev => [data,...prev])
-if(theme && !themes.includes(theme)){
-setThemes(prev => [...prev,theme])
-}
 
 setContent("")
 setSource("")
-setTheme("")
 setTagInput("")
 setShowForm(false)
 
@@ -249,89 +229,6 @@ onChange={(e)=>setSearch(e.target.value)}
 placeholder="Rechercher une citation..."
 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-3"
 />
-
-</div>
-
-
-
-{/* THEMES */}
-
-<div className="flex flex-wrap items-center gap-2 mb-8">
-
-<button
-onClick={()=>setActiveTheme(null)}
-className={`text-[13px] px-3 py-1.5 rounded-full border ${
-!activeTheme ? "bg-white text-black" : "border-neutral-800"
-}`}
->
-Tous
-</button>
-
-{themes.map(t => (
-
-<div
-key={t}
-className={`flex items-center gap-1 text-[13px] px-3 py-1.5 rounded-full border ${
-activeTheme === t
-? "bg-white text-black"
-: "border-neutral-800"
-}`}
->
-
-<button
-
-onTouchStart={(e)=>{
-
-const timeout = setTimeout(()=>{
-
-if(confirm(`Supprimer le thème "${t}" ?`)){
-setThemes(prev => prev.filter(x => x !== t))
-}
-
-},700)
-
-e.currentTarget.dataset.timeout = String(timeout)
-
-}}
-
-onTouchEnd={(e)=>{
-clearTimeout(Number(e.currentTarget.dataset.timeout))
-}}
-
-onClick={()=>setActiveTheme(t)}
-
-onContextMenu={(e)=>{
-e.preventDefault()
-
-if(confirm(`Supprimer le thème "${t}" ?`)){
-setThemes(prev => prev.filter(x => x !== t))
-}
-
-}}
-
->
-{t}
-
-</button>
-
-</div>
-
-))}
-
-
-{/* add theme */}
-
-<button
-onClick={()=>{
-const name = prompt("Nouveau thème")
-if(!name) return
-if(themes.includes(name)) return
-setThemes(prev => [...prev,name])
-}}
-className="text-[13px] px-3 py-1.5 rounded-full border border-neutral-700 hover:border-neutral-500"
->
-+
-</button>
 
 </div>
 
@@ -447,21 +344,6 @@ onClick={(e)=>e.stopPropagation()}
 </span>
 )}
 
-{p.theme &&(
-
-<button
-onClick={(e)=>{
-e.preventDefault()
-e.stopPropagation()
-setActiveTheme(p.theme!)
-}}
-className="px-2 py-3px rounded-md bg-neutral-800 text-neutral-300 uppercase tracking-wide text-[10px]"
->
-{p.theme}
-</button>
-
-)}
-
 </div>
 
 
@@ -535,13 +417,6 @@ className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 mb-3"
 value={source}
 onChange={(e)=>setSource(e.target.value)}
 placeholder="Auteur"
-className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 mb-3"
-/>
-
-<input
-value={theme}
-onChange={(e)=>setTheme(e.target.value)}
-placeholder="Thème"
 className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 mb-3"
 />
 
