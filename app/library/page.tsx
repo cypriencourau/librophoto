@@ -215,9 +215,28 @@ return(
 
 <div className="flex items-center justify-between mb-10">
 
+<div className="flex items-center gap-3">
+
 <h1 className="text-3xl font-semibold">
 Bibliothèque
 </h1>
+
+<div
+className="
+px-3 py-1
+rounded-full
+border border-neutral-800
+bg-neutral-900/80
+text-xs
+text-neutral-400
+font-medium
+tracking-wide
+"
+>
+{total} perles
+</div>
+
+</div>
 
 <button
 onClick={()=>setShowForm(true)}
