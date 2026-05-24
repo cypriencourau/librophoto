@@ -27,6 +27,10 @@ const [search,setSearch] = useState("")
 const [activeTags,setActiveTags] = useState<string[]>([])
 
 const [loading,setLoading] = useState(true)
+const PAGE_SIZE = 40
+
+const [page,setPage] = useState(1)
+const [total,setTotal] = useState(0)
 
 const [showForm,setShowForm] = useState(false)
 
@@ -39,6 +43,8 @@ const [tagInput,setTagInput] = useState("")
 /* TAG TOGGLE */
 
 function toggleTag(tag:string){
+
+setPage(1)
 
 if(activeTags.includes(tag)){
 setActiveTags(activeTags.filter(t => t !== tag))
@@ -54,51 +60,59 @@ setActiveTags([...activeTags,tag])
 
 useEffect(()=>{
 loadPearls()
-},[search,activeTags])
+},[search,activeTags,page])
 
 
 async function loadPearls(){
 
 setLoading(true)
 
-const isFiltering =
-  search !== "" ||
-  activeTags.length > 0
+const from = (page - 1) * PAGE_SIZE
+const to = from + PAGE_SIZE - 1
 
 let query = supabase
 .from("pearls")
-.select("id,content,source,tags,created_at")
+.select("id,content,source,tags,created_at", { count: "exact" })
 .order("created_at",{ascending:false})
-.limit(isFiltering ? 80 : 40)
+
+/* SEARCH */
 
 if(search){
-query = query.ilike("content",`%${search}%`)
+
+query = query.or(`
+content.ilike.%${search}%,
+tags.ilike.%${search}%
+`)
+
 }
 
-const {data,error} = await query
-
-if(error){
-console.error(error)
-return
-}
-
-let list = data || []
+/* TAG FILTER */
 
 if(activeTags.length > 0){
 
-list = list.filter(p=>{
+activeTags.forEach(tag=>{
 
-if(!p.tags) return false
-
-const pearlTags = p.tags.split(" ")
-
-return activeTags.every(tag => pearlTags.includes(tag))
+query = query.ilike("tags", `%${tag}%`)
 
 })
 
 }
 
-setPearls(list)
+/* PAGINATION */
+
+query = query.range(from,to)
+
+const {data,error,count} = await query
+
+if(error){
+console.error(error)
+setLoading(false)
+return
+}
+
+setPearls(data || [])
+setTotal(count || 0)
+
 setLoading(false)
 
 }
@@ -225,7 +239,10 @@ Ajouter
 
 <input
 value={search}
-onChange={(e)=>setSearch(e.target.value)}
+onChange={(e)=>{
+setSearch(e.target.value)
+setPage(1)
+}}
 placeholder="Rechercher une citation..."
 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-3"
 />
@@ -386,6 +403,38 @@ className="text-[11px] text-neutral-500 hover:text-white"
 
 )}
 
+{Math.ceil(total / PAGE_SIZE) > 1 && (
+
+<div className="flex justify-center gap-2 mt-10 flex-wrap">
+
+{Array.from(
+{ length: Math.ceil(total / PAGE_SIZE) },
+(_,i)=>{
+
+const p = i + 1
+
+return(
+
+<button
+key={p}
+onClick={()=>setPage(p)}
+className={`
+px-3 py-1.5 rounded-lg text-sm transition
+${page === p
+? "bg-white text-black"
+: "bg-neutral-900 border border-neutral-800 text-white hover:border-neutral-600"}
+`}
+>
+{p}
+</button>
+
+)
+
+})}
+
+</div>
+
+)}
 
 
 {/* CREATE MODAL */}
