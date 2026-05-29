@@ -215,7 +215,7 @@ const [selectedText, setSelectedText] = useState("")
           [&_.ProseMirror]:min-h-[900px]
 
           [&_.ProseMirror]:text-[18px]
-          [&_.ProseMirror]:leading-9
+          [&_.ProseMirror]:leading-8
 
           [&_.ProseMirror_h1]:text-5xl
           [&_.ProseMirror_h1]:font-bold
