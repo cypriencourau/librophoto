@@ -67,6 +67,8 @@ export default function NotePage() {
     try {
       setSaving(true)
 
+      const now = new Date().toISOString()
+
       const { error } = await supabase
         .from("notes")
         .update({
@@ -138,7 +140,7 @@ export default function NotePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
+      <main className="min-h-screen bg-neutral-950 text-white overflow-x-hidden">
         <div className="text-neutral-500">
           Chargement...
         </div>
@@ -147,7 +149,7 @@ export default function NotePage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
+    <main className="min-h-screen bg-neutral-950 text-white overflow-x-hidden">
 
       <header
         className="
@@ -160,7 +162,7 @@ export default function NotePage() {
           backdrop-blur-2xl
         "
       >
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
 
           <button
             onClick={() =>
@@ -170,13 +172,15 @@ export default function NotePage() {
             )
           }
             className="
-              rounded-xl
-              border
-              border-neutral-800
-              bg-neutral-900
-              px-4
-              py-2
-              hover:border-neutral-700
+            rounded-xl
+            border
+            border-neutral-800
+            bg-neutral-900
+            px-3
+            sm:px-4
+            py-2
+            text-sm
+            hover:border-neutral-700
             "
           >
             ← Retour
@@ -201,12 +205,15 @@ export default function NotePage() {
                 setShowMenu(!showMenu)
               }
               className="
+                h-10
+                w-10
                 rounded-xl
                 border
                 border-neutral-800
                 bg-neutral-900
-                px-4
-                py-2
+                flex
+                items-center
+                justify-center
               "
             >
               ⋯
@@ -247,7 +254,7 @@ export default function NotePage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
 
         <textarea
         ref={titleRef}
@@ -265,7 +272,7 @@ export default function NotePage() {
 
             bg-transparent
 
-            text-5xl md:text-6xl
+            text-3xl sm:text-4xl md:text-6xl
             font-bold
             tracking-tight
             leading-tight
@@ -280,15 +287,19 @@ export default function NotePage() {
           "
         />
 
-        <BookEditor
-          content={content}
-          onChange={setContent}
-        />
+        <div className="max-w-3xl mx-auto">
+          <BookEditor
+            content={content}
+            onChange={setContent}
+          />
+        </div>
 
       </div>
 
       <div
         className="
+          hidden
+          sm:block
           fixed
           bottom-6
           right-6
@@ -303,6 +314,7 @@ export default function NotePage() {
           text-neutral-300
         "
       >
+
         <div>{wordCount} mots</div>
 
         <div className="text-neutral-500 mt-1">
