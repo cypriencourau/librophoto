@@ -13,6 +13,10 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@google-cloud/vision": "^5.3.4",
     "@supabase/supabase-js": "^2.98.0",
+    "@tiptap/extension-underline": "^3.23.6",
+    "@tiptap/react": "^3.23.6",
+    "@tiptap/starter-kit": "^3.23.6",
+    "@tiptap/suggestion": "^3.23.6",
     "browser-image-compression": "^2.0.2",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.577.0",
@@ -20,7 +24,8 @@
     "node-tesseract-ocr": "^2.2.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-easy-crop": "^5.5.7"
+    "react-easy-crop": "^5.5.7",
+    "tippy.js": "^6.3.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

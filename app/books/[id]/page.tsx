@@ -7,6 +7,7 @@ import { Trash2, X } from "lucide-react"
 import imageCompression from "browser-image-compression"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { useSearchParams } from "next/navigation"
 
 import {
   DndContext,
@@ -59,6 +60,7 @@ export default function BookPage() {
   const [captures, setCaptures] = useState<Capture[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [pearls,setPearls] = useState<any[]>([])
+  const [notes,setNotes] = useState<any[]>([])
   const [pageNumber,setPageNumber] = useState("")
   const [tagsInput,setTagsInput] = useState("")
   const [tab,setTab] = useState("photos")
@@ -105,6 +107,16 @@ export default function BookPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [isDrawing, setIsDrawing] = useState(false)
 
+  const searchParams = useSearchParams()
+
+    useEffect(() => {
+      const tabParam = searchParams.get("tab")
+
+      if (tabParam) {
+        setTab(tabParam)
+      }
+    }, [])
+
   async function fetchPearls(){
 
   if(!bookId) return
@@ -122,6 +134,52 @@ export default function BookPage() {
 
   setPearls(data || [])
 
+}
+
+async function fetchNotes() {
+
+  if (!bookId) return
+
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("book_id", bookId)
+    .order("pinned", { ascending: false })
+    .order("updated_at", { ascending: false })
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  console.log("NOTES DATA", data)
+  console.log("NOTES ERROR", error)
+
+  setNotes(data || [])
+}
+
+  // ================= créer une note =================
+
+async function createNote() {
+
+  if (!bookId) return
+
+  const { data, error } = await supabase
+    .from("notes")
+    .insert({
+      book_id: bookId,
+      title: "Nouvelle note",
+      content: ""
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  router.push(`/notes/${data.id}`)
 }
 
   // ================= FETCH =================
@@ -155,6 +213,7 @@ export default function BookPage() {
         setMenuOpen(false)
 
         fetchPearls()
+        fetchNotes()
     }
 
     fetchData()
@@ -843,6 +902,17 @@ if (!canvas) return
           Perles
         </button>
 
+        <button
+          onClick={()=>setTab("notes")}
+          className={`px-4 py-1.5 text-sm rounded-lg transition ${
+            tab==="notes"
+              ? "bg-white text-black shadow"
+              : "text-neutral-400"
+          }`}
+        >
+          Notes
+        </button>
+
       </div>
     </div>
 
@@ -909,6 +979,148 @@ if (!canvas) return
       </div>
 
       )}
+
+
+
+{/* ONGLET NOTES */}
+
+      {tab === "notes" && (
+
+  <div className="px-4 pt-6 pb-24 max-w-4xl mx-auto">
+
+
+<div className="flex items-center justify-between mb-6">
+
+  <div>
+    <h2 className="text-xl font-semibold">
+      Notes
+    </h2>
+
+    <p className="text-sm text-neutral-500 mt-1">
+      Tes réflexions personnelles sur ce livre
+    </p>
+  </div>
+
+  <button
+    onClick={createNote}
+    className="
+      px-4 py-2.5
+      rounded-xl
+      bg-white
+      text-black
+      text-sm
+      font-medium
+      shadow-lg
+      hover:scale-105
+      active:scale-95
+      transition
+    "
+  >
+    + Nouvelle note
+  </button>
+
+</div>
+
+{notes.length === 0 ? (
+
+  <div className="
+    bg-neutral-900/70
+    border border-neutral-800
+    rounded-3xl
+    p-12
+    text-center
+  ">
+
+    <div className="text-5xl mb-4">
+      ✍️
+    </div>
+
+    <h3 className="text-lg font-medium mb-2">
+      Aucune note pour le moment
+    </h3>
+
+    <p className="text-neutral-500 text-sm max-w-md mx-auto">
+      Commence à écrire tes réflexions, résumés et idées importantes
+      pendant ta lecture.
+    </p>
+
+  </div>
+
+) : (
+
+  <div className="space-y-3">
+
+    {notes.map((note) => (
+
+      <div
+        key={note.id}
+        onClick={() => router.push(`/notes/${note.id}`)}
+        className="
+          group
+          bg-neutral-900/70
+          border border-neutral-800
+          rounded-2xl
+          p-5
+          cursor-pointer
+          hover:border-neutral-700
+          hover:-translate-y-0.5
+          transition-all
+        "
+      >
+
+        <div className="flex items-start justify-between gap-4">
+
+          <div className="flex-1">
+
+          <h3 className="font-semibold text-base">
+            {note.title || "Sans titre"}
+          </h3>
+
+          <div className="text-xs text-neutral-600 mt-1 mb-3">
+            {
+              ((note.content || "")
+                .replace(/<[^>]*>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean).length)
+            } mots
+          </div>
+
+          <p className="
+            text-sm
+            text-neutral-500
+            line-clamp-3
+            leading-6
+          ">
+            {(note.content || "")
+              .replace(/<[^>]*>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim() || "Clique pour commencer à écrire..."}
+          </p>
+
+          </div>
+
+          {note.pinned && (
+            <div className="text-yellow-400">
+              📌
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+    ))}
+
+  </div>
+
+)}
+
+  </div>
+
+)}
+
 
 
     {/* GRID */}

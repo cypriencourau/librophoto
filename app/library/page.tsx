@@ -233,7 +233,7 @@ font-medium
 tracking-wide
 "
 >
-{total} perles
+{total} citations
 </div>
 
 </div>
