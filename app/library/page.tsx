@@ -81,7 +81,8 @@ if(search){
 
 query = query.or(`
 content.ilike.%${search}%,
-tags.ilike.%${search}%
+tags.ilike.%${search}%,
+source.ilike.%${search}%
 `)
 
 }
@@ -129,7 +130,7 @@ async function loadFilters(){
 
 const {data,error} = await supabase
 .from("pearls")
-.select("theme,tags")
+.select("tags")
 
 if(error){
 console.error(error)
@@ -183,6 +184,7 @@ setTagInput("")
 setShowForm(false)
 
 loadFilters()
+await loadPearls()
 
 }
 
@@ -213,9 +215,9 @@ return(
 
 {/* HEADER */}
 
-<div className="flex items-center justify-between mb-10">
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
 
-<div className="flex items-center gap-3">
+<div className="flex items-center gap-3 flex-wrap">
 
 <h1 className="text-3xl font-semibold">
 Bibliothèque
@@ -356,12 +358,10 @@ className="group flex flex-col justify-between min-h-170px bg-neutral-900 border
 
 {/* citation */}
 
-<p className="text-[15px] leading-relaxed line-clamp-5 whitespace-pre-wrap mb-5 text-neutral-100">
 <div
   className="text-[15px] leading-relaxed line-clamp-5 whitespace-pre-wrap mb-5 text-neutral-100 [&_*]:inline"
   dangerouslySetInnerHTML={{ __html: p.content }}
 />
-</p>
 
 {/* META */}
 
