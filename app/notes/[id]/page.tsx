@@ -254,7 +254,7 @@ export default function NotePage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-12">
 
         <textarea
         ref={titleRef}
@@ -272,7 +272,7 @@ export default function NotePage() {
 
             bg-transparent
 
-            text-3xl sm:text-4xl md:text-6xl
+            text-[28px] sm:text-4xl md:text-6xl
             font-bold
             tracking-tight
             leading-tight
@@ -283,11 +283,11 @@ export default function NotePage() {
 
             placeholder:text-neutral-700
 
-            mb-10
+            mb-6 sm:mb-10
           "
         />
 
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full sm:max-w-3xl mx-auto">
           <BookEditor
             content={content}
             onChange={setContent}
